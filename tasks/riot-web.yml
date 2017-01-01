@@ -1,0 +1,48 @@
+---
+- name: Install riot-web dependencies
+  action: apt pkg={{item}} state=installed
+  with_items:
+   - nodejs
+   - nodejs-legacy
+   - npm
+   - nginx
+  
+- name: Clone riot-web from github
+  git: repo=https://github.com/vector-im/riot-web.git dest=/opt/riot-web
+
+- name: Call npm install
+  shell: npm install
+  args:
+    chdir: /opt/riot-web
+
+- name: Install riot-web's config file
+  template:
+    src: riot.config.j2
+    dest: /opt/riot-web/config.json
+    
+- name: Configure riot-web's homeserver
+  lineinfile: dest=/opt/riot-web/config.json
+  args:
+    regexp: '^    "default_hs_url":'
+    line: '    "default_hs_url": "https://{{ hostname_server }}:443",'
+    # We do not recommend running Riot from the same domain name as your Matrix homeserver. The reason is the risk of XSS (cross-site-scripting) vulnerabilities 
+    # that could occur if someone caused Riot to load and render malicious user generated content from a Matrix API which then had trusted access to Riot (or other apps) 
+    # due to sharing the same domain.
+    # We have put some coarse mitigations into place to try to protect against this situation, but it's still not good practice to do it in the first place. 
+    # See https://github.com/vector-im/vector-web/issues/1977 for more details.
+    # See also https://github.com/matrix-org/synapse#using-a-reverse-proxy-with-synapse to see why we use port 443 here.
+    
+- name: Call npm run dist
+  shell: npm run dist
+  args:
+    chdir: /opt/riot-web
+
+- name: Ensure nginx serving riot is configured and started
+  template:
+    src: nginx-default.j2
+    dest: /etc/nginx/sites-available/default
+  notify:
+    - restart nginx
+
+- name: Make sure nginx is enabled
+  service: name=nginx enabled=yes

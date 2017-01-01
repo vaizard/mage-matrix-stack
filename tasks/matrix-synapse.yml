@@ -1,0 +1,133 @@
+---
+
+- name: Add matrix-synapse repo gpg key
+  command: apt-key adv --keyserver keyserver.ubuntu.com --recv-keys AD0592FE47F0DF61
+- name: Add matrix-synapse repo
+  command: add-apt-repository -s "https://matrix.org/packages/debian/" 
+  
+- name: Install packages needed by matrix-synapse
+  action: apt pkg={{item}} state=installed update_cache=yes
+  with_items:
+   - build-essential
+   - python2.7-dev
+   - libffi-dev
+   - python-pip
+   - python-setuptools
+   - sqlite3
+   - libssl-dev
+   - python-virtualenv
+   - python3-openssl
+   - libjpeg-dev
+   - libxslt1-dev
+   - matrix-synapse
+   - postgresql   # postgres backend
+   - postgresql-contrib   # postgres backend
+
+- name: PIP upgrades
+  action: pip name={{ item }} extra_args='--upgrade' # pip install --upgrade pip
+  with_items:
+    - pip
+    - setuptools
+
+- name: PIP pynacl upgrade
+  pip: name=pynacl extra_args='--upgrade' # pip install --upgrade --force "pynacl==0.3.0"
+
+  
+#    - name: PIP to install needed dependencies into virtualenv
+#      action: pip name={{ item }} virtualenv=/home/{{ username }}/.matrix-synapse
+#      with_items:
+#       - cryptography
+#       - pyasn1_modules
+#       - characteristic
+#       - simplejson
+#       - canonicaljson
+
+- name: Configure if registrations are enabled by default or not
+  lineinfile: dest=/etc/matrix-synapse/homeserver.yaml
+  args:
+    regexp: "^server_name:"
+    line: "server_name: '{{ hostname_server }}'"
+
+
+
+- name: Patching /etc/matrix-synapse/homeserver.yaml to expect proxy/loadbalancer for webclient traffic
+  patch: >
+    src=homeserver.yaml.patch
+    dest=/etc/matrix-synapse/homeserver.yaml
+    
+- name: Configure if registrations are enabled by default or not
+  lineinfile: dest=/etc/matrix-synapse/homeserver.yaml
+  args:
+    regexp: "^enable_registration:"
+    line: "enable_registration: '{{ enable_registration }}'"
+
+- name: Configure registration shared secret
+  lineinfile: dest=/etc/matrix-synapse/homeserver.yaml
+  args:
+    regexp: "^registration_shared_secret:"
+    line: "registration_shared_secret: '{{ registration_shared_secret }}'"
+
+
+- name: Configure if captchas are enabled by default or not
+  lineinfile: dest=/etc/matrix-synapse/homeserver.yaml
+  args:
+    regexp: "^enable_registration_captcha:"
+    line: "enable_registration_captcha: '{{ enable_registration_captcha }}'"
+
+- name: Configure private-key recaptcha key
+  lineinfile: dest=/etc/matrix-synapse/homeserver.yaml
+  args:
+    regexp: "^recaptcha_private_key:"
+    line: "recaptcha_private_key: '{{ recaptcha_private_key }}'"
+
+- name: Configure public-key recaptcha key
+  lineinfile: dest=/etc/matrix-synapse/homeserver.yaml
+  args:
+    regexp: "^recaptcha_public_key:"
+    line: "recaptcha_public_key: '{{ recaptcha_public_key }}'"
+
+- name: Configure turn_uris
+  lineinfile: dest=/etc/matrix-synapse/homeserver.yaml
+  args:
+    line: "turn_uris: [ \"turn:{{ hostname_server }}:3478?transport=udp\", \"turn:{{ hostname_server }}:3478?transport=tcp\" ]"
+
+- name: Configure turn_user_lifetime
+  lineinfile: dest=/etc/matrix-synapse/homeserver.yaml
+  args:
+    line: "turn_shared_secret: '{{ turn_shared_secret }}'"
+
+- name: Configure turn_user_lifetime
+  lineinfile: dest=/etc/matrix-synapse/homeserver.yaml
+  args:
+    line: "turn_user_lifetime: 86400000"
+
+    
+- name: Configure turn_user_lifetime
+  lineinfile: dest=/etc/matrix-synapse/homeserver.yaml
+  args:
+    line: "turn_user_lifetime: 86400000"
+
+# POSTGRESQL configruation
+
+- name: Insert/update database configuration in /etc/matrix-synapse/homeserver.yaml
+  blockinfile:
+    dest: /etc/matrix-synapse/homeserver.yaml
+    insertafter: EOF
+    block: |
+      database:
+          name: {{ db_engine }}
+          args:
+              user: {{ db_user }}
+              password: {{ db_password }}
+              database: {{ db_name }}
+              host: {{ db_host }}
+              cp_min: {{ db_cp_min }}
+              cp_max: {{ db_cp_max }}
+
+     
+- name: Start matrix-synapse server
+  service: name=matrix-synapse state=restarted
+
+- name: Make sure matrix-synapse is enabled
+  service: name=matrix-synapse enabled=yes
+

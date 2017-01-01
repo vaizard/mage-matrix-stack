@@ -1,0 +1,5 @@
+---
+
+- include: matrix-synapse.yml
+- include: coturn.yml
+- include: riot-web.yml

@@ -1,0 +1,36 @@
+---
+
+- name: Install packages needed to compile coturn server
+  action: apt pkg={{item}} state=installed
+  with_items:
+   - coturn
+   
+- name: Configure coturn lt-cred-mech
+  lineinfile: dest=/etc/turnserver.conf
+  args:
+    regexp: "^lt-cred-mech"
+    line: "lt-cred-mech"
+
+- name: Configure coturn use-auth-secret
+  lineinfile: dest=/etc/turnserver.conf
+  args:
+    regexp: "^use-auth-secret"
+    line: "use-auth-secret"
+
+- name: Configure coturn static-auth-secret
+  lineinfile: dest=/etc/turnserver.conf
+  args:
+    regexp: "^static-auth-secret="
+    line: "static-auth-secret={{ turn_shared_secret }}"
+
+- name: Configure coturn realm
+  lineinfile: dest=/etc/turnserver.conf
+  args:
+    regexp: "^realm="
+    line: "realm={{ hostname_server }}"
+
+- name: Start turn server
+  service: name=coturn state=started
+
+- name: Make sure coturn is enabled
+  service: name=coturn enabled=yes
