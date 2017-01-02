@@ -107,6 +107,15 @@
   args:
     line: "turn_user_lifetime: 86400000"
 
+    
+- name: Configuring guest access
+  lineinfile: dest=/etc/matrix-synapse/homeserver.yaml
+  args:
+    regexp: '^(.*)allow_guest_access(.*)'
+    line: "allow_guest_access: {{ guest_access }}"
+    create: yes
+    
+
 # POSTGRESQL configruation
 
 - name: Insert/update database configuration in /etc/matrix-synapse/homeserver.yaml

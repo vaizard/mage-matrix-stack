@@ -9,6 +9,7 @@ recaptcha_private_key: YOURPRIVATEKEYHERE
 recaptcha_public_key: YOURPUBLICKEYHERE
 turn_shared_secret: YOURSHAREDSECRETHERE
 registration_shared_secret: YOUREXTREMELYSECRETREGISTRATIONSECRET
+guest_access: true
 db_engine: psycopg2
 db_name: synapse
 db_user: synapse

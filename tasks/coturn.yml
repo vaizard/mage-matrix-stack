@@ -29,6 +29,12 @@
     regexp: "^realm="
     line: "realm={{ hostname_server }}"
 
+- name: Setting /etc/default/coturn
+  lineinfile: dest=/etc/default/coturn
+  args:
+#    regexp: "^#TURNSERVER_ENABLED=1"
+    line: "TURNSERVER_ENABLED=1"
+
 - name: Start turn server
   service: name=coturn state=started
 

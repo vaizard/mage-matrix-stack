@@ -26,10 +26,12 @@ An nginx proxy/loadbalancer container (sporting mage.nginx-proxy and mage.letsen
 
 ## How it fits together
 
+```
 ANDROID / DESKTOP / IOS client --> https://matrix-server.example.com      [proxy container, nginx (ssl terminator), port 443] --> [matrix container, matrix-synapse, port 8008]
 Browsers                       --> https://matrix.example.com             [proxy container, nginx (ssl terminator), port 443] --> [matrix container, nginx, port 80, serving riot-web]
 Federation servers             --> https://matrix-server.example.com:8443 [matrix container, matrix-synapse, port 8448]
 Clients                        --> matrix-server.example.com              [matrix container, coturn, ports 3478, 3479 - both UDP and TCP traffic]
+```
 
 Letsencrypt certificates are used by the proxy container's nginx.
 matrix-server.example.com:8443 listeing on port 8443 to servers in federation uses a selfsigned certificate with a 10 year validity.
@@ -41,6 +43,22 @@ occur if someone caused Riot to load and render malicious user generated content
 Riot (or other apps) due to sharing the same domain. While some coarse mitigations are in place to try to protect against this 
 situation, it's still not good practice to do it in the first place. See https://github.com/vector-im/vector-web/issues/1977 for details.
 
+
+## TODO's
+
+- Calls still dont work
+  - try change coturn realm
+  - open tls ports for coturn
+- Online user registration fails
+  - Using register_new_matrix_user -c /etc/matrix-synapse/homeserver.yaml https://matrix-server.example.com works
+- look into homeserver.yaml
+    - url_preview_enabled: False
+    - url_preview_ip_range_blacklist:
+    - allow_guest_access: False
+    - email
+- look into why the config stuff gets pasted to the bottom
+
+```
 ## Example playbook
 
 ###########################################
@@ -155,5 +173,5 @@ situation, it's still not good practice to do it in the first place. See https:/
   roles:
     - mage.postgresql
     - mage.matrix-stack
+```
 
-    
