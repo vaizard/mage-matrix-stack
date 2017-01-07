@@ -8,7 +8,7 @@
    - nginx
   
 - name: Clone riot-web from github
-  git: repo=https://github.com/vector-im/riot-web.git dest=/opt/riot-web
+  git: repo=https://github.com/vector-im/riot-web.git dest=/opt/riot-web version={{ riot_version }}
 
 - name: Call npm install
   shell: npm install

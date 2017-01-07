@@ -3,6 +3,7 @@ username: matrix
 git_repo: https://github.com/matrix-org/synapse/tarball/master
 hostname_server: server.localhost
 hostname_webapp: webapp.localhost
+riot_version: HEAD
 enable_registration: true
 enable_registration_captcha: false
 recaptcha_private_key: YOURPRIVATEKEYHERE
@@ -17,3 +18,4 @@ db_password: THEPASSWORDFORTHESYNAPSEUSER
 db_host: 127.0.0.1
 db_cp_min: 5
 db_cp_max: 10
+

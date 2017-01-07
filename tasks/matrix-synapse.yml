@@ -45,10 +45,8 @@
 - name: Configure if registrations are enabled by default or not
   lineinfile: dest=/etc/matrix-synapse/homeserver.yaml
   args:
-    regexp: "^server_name:"
+    regexp: "^(.*)server_name:(.*)"
     line: "server_name: '{{ hostname_server }}'"
-
-
 
 - name: Patching /etc/matrix-synapse/homeserver.yaml to expect proxy/loadbalancer for webclient traffic
   patch: >
@@ -58,56 +56,52 @@
 - name: Configure if registrations are enabled by default or not
   lineinfile: dest=/etc/matrix-synapse/homeserver.yaml
   args:
-    regexp: "^enable_registration:"
+    regexp: "^(.*)enable_registration:(.*)"
     line: "enable_registration: '{{ enable_registration }}'"
 
 - name: Configure registration shared secret
   lineinfile: dest=/etc/matrix-synapse/homeserver.yaml
   args:
-    regexp: "^registration_shared_secret:"
+    regexp: "^(.*)registration_shared_secret:(.*)"
     line: "registration_shared_secret: '{{ registration_shared_secret }}'"
 
 
 - name: Configure if captchas are enabled by default or not
   lineinfile: dest=/etc/matrix-synapse/homeserver.yaml
   args:
-    regexp: "^enable_registration_captcha:"
+    regexp: "^(.*)enable_registration_captcha:(.*)"
     line: "enable_registration_captcha: '{{ enable_registration_captcha }}'"
 
 - name: Configure private-key recaptcha key
   lineinfile: dest=/etc/matrix-synapse/homeserver.yaml
   args:
-    regexp: "^recaptcha_private_key:"
+    regexp: "^(.*)recaptcha_private_key:(.*)"
     line: "recaptcha_private_key: '{{ recaptcha_private_key }}'"
 
 - name: Configure public-key recaptcha key
   lineinfile: dest=/etc/matrix-synapse/homeserver.yaml
   args:
-    regexp: "^recaptcha_public_key:"
+    regexp: "^(.*)recaptcha_public_key:(.*)"
     line: "recaptcha_public_key: '{{ recaptcha_public_key }}'"
 
 - name: Configure turn_uris
   lineinfile: dest=/etc/matrix-synapse/homeserver.yaml
   args:
+    regexp: "^(.*)turn_uris:(.*)"
     line: "turn_uris: [ \"turn:{{ hostname_server }}:3478?transport=udp\", \"turn:{{ hostname_server }}:3478?transport=tcp\" ]"
 
 - name: Configure turn_user_lifetime
   lineinfile: dest=/etc/matrix-synapse/homeserver.yaml
   args:
+    regexp: "^(.*)turn_shared_secret:(.*)"
     line: "turn_shared_secret: '{{ turn_shared_secret }}'"
 
 - name: Configure turn_user_lifetime
   lineinfile: dest=/etc/matrix-synapse/homeserver.yaml
   args:
+    regexp: "^(.*)turn_user_lifetime:(.*)"
     line: "turn_user_lifetime: 86400000"
 
-    
-- name: Configure turn_user_lifetime
-  lineinfile: dest=/etc/matrix-synapse/homeserver.yaml
-  args:
-    line: "turn_user_lifetime: 86400000"
-
-    
 - name: Configuring guest access
   lineinfile: dest=/etc/matrix-synapse/homeserver.yaml
   args:

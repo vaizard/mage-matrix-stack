@@ -44,20 +44,6 @@ Riot (or other apps) due to sharing the same domain. While some coarse mitigatio
 situation, it's still not good practice to do it in the first place. See https://github.com/vector-im/vector-web/issues/1977 for details.
 
 
-## TODO's
-
-- Calls still dont work
-  - try change coturn realm
-  - open tls ports for coturn
-- Online user registration fails
-  - Using register_new_matrix_user -c /etc/matrix-synapse/homeserver.yaml https://matrix-server.example.com works
-- look into homeserver.yaml
-    - url_preview_enabled: False
-    - url_preview_ip_range_blacklist:
-    - allow_guest_access: False
-    - email
-- look into why the config stuff gets pasted to the bottom
-
 ```
 ## Example playbook
 
@@ -154,6 +140,7 @@ situation, it's still not good practice to do it in the first place. See https:/
    db_host: 127.0.0.1
    db_cp_min: 5
    db_cp_max: 10
+   riot_version: HEAD
    # mage.postgresql vars
    postgresql_version: 9.5
    postgresql_databases:
