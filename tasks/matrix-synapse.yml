@@ -2,6 +2,7 @@
 
 - name: Add matrix-synapse repo gpg key
   command: apt-key adv --keyserver keyserver.ubuntu.com --recv-keys AD0592FE47F0DF61
+
 - name: Add matrix-synapse repo
   command: add-apt-repository -s "https://matrix.org/packages/debian/" 
   
@@ -19,9 +20,14 @@
    - python3-openssl
    - libjpeg-dev
    - libxslt1-dev
+   - python-jinja2
+   - python-bleach
    - matrix-synapse
    - postgresql   # postgres backend
    - postgresql-contrib   # postgres backend
+
+- name: Clone synapse from github
+  git: repo=https://github.com/matrix-org/synapse.git dest=/opt/synapse version=HEAD
 
 - name: PIP upgrades
   action: pip name={{ item }} extra_args='--upgrade' # pip install --upgrade pip
@@ -31,16 +37,6 @@
 
 - name: PIP pynacl upgrade
   pip: name=pynacl extra_args='--upgrade' # pip install --upgrade --force "pynacl==0.3.0"
-
-  
-#    - name: PIP to install needed dependencies into virtualenv
-#      action: pip name={{ item }} virtualenv=/home/{{ username }}/.matrix-synapse
-#      with_items:
-#       - cryptography
-#       - pyasn1_modules
-#       - characteristic
-#       - simplejson
-#       - canonicaljson
 
 - name: Configure if registrations are enabled by default or not
   lineinfile: dest=/etc/matrix-synapse/homeserver.yaml
@@ -110,13 +106,27 @@
     create: yes
     
 
-# POSTGRESQL configruation
+# All the other required configuration
 
-- name: Insert/update database configuration in /etc/matrix-synapse/homeserver.yaml
+- name: Configuring report_stats, public_baseurl, email_notifs and database
   blockinfile:
     dest: /etc/matrix-synapse/homeserver.yaml
     insertafter: EOF
     block: |
+      report_stats: {{ report_stats }}
+      public_baseurl: '{{ public_baseurl }}'
+
+      email:
+         enable_notifs: {{ email_enable_notifs }}
+         smtp_host: '{{ email_smtp_host }}'
+         smtp_port: {{ email_smtp_port }}
+         notif_from: '{{ email_notif_from }}'
+         app_name: Matrix
+         template_dir: /opt/synapse/res/templates
+         notif_template_html: notif_mail.html
+         notif_template_text: notif_mail.txt
+         notif_for_new_users: {{ email_notif_for_new_users }}
+
       database:
           name: {{ db_engine }}
           args:

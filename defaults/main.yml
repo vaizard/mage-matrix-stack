@@ -10,6 +10,7 @@ recaptcha_private_key: YOURPRIVATEKEYHERE
 recaptcha_public_key: YOURPUBLICKEYHERE
 turn_shared_secret: YOURSHAREDSECRETHERE
 registration_shared_secret: YOUREXTREMELYSECRETREGISTRATIONSECRET
+report_stats: false
 guest_access: true
 db_engine: psycopg2
 db_name: synapse
@@ -18,4 +19,12 @@ db_password: THEPASSWORDFORTHESYNAPSEUSER
 db_host: 127.0.0.1
 db_cp_min: 5
 db_cp_max: 10
-
+public_baseurl: http://localhost/
+email_enable_notifs: true
+email_smtp_host: 'localhost'
+email_smtp_port: 587
+email_notif_from: 'Your Friendly %(app)s Home Server <matrix@example.com>'
+email_notif_for_new_users: true
+email_smtp_auth: false
+email_smtp_user: YOURSMTPUSERNAME
+email_smtp_passwd: YOURSMTPPASSWORD

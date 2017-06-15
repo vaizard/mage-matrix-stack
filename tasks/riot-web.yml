@@ -14,8 +14,6 @@
   action: apt pkg={{item}} state=latest update_cache=yes
   with_items:
    - nodejs
-   - nodejs-legacy
-   - npm
    - nginx
   
 - name: Clone riot-web from github
