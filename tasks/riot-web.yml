@@ -1,6 +1,17 @@
 ---
+
+- name: Add nodesource apt_keys
+  apt_key:
+    url: "https://deb.nodesource.com/gpgkey/nodesource.gpg.key"
+    state: present
+
+- apt_repository:
+    repo: "deb https://deb.nodesource.com/node_7.x {{ ansible_distribution_release }} main"
+    state: present
+
+
 - name: Install riot-web dependencies
-  action: apt pkg={{item}} state=installed
+  action: apt pkg={{item}} state=latest update_cache=yes
   with_items:
    - nodejs
    - nodejs-legacy
