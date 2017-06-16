@@ -133,8 +133,17 @@ situation, it's still not good practice to do it in the first place. See https:/
    registration_shared_secret: ReplaceThisTooToMakeThingsCount
    hostname_server: matrix-server.example.com
    hostname_webapp: matrix.example.com
+   public_baseurl: https://matrix-server.example.com/
    enable_registration: true
    enable_registration_captcha: true
+   email_enable_notifs: true
+   email_smtp_host: 'mail.example.com'
+   email_smtp_port: 587
+   email_notif_from: 'Example %(app)s Chat Server <chat@example.com>'
+   email_notif_for_new_users: true
+   email_smtp_auth: true
+   email_smtp_user: 'chat@example.com'
+   email_smtp_passwd: 'MYverySECRETpassword'
    db_password: ReplaceThisWithThePostgresqlPasswordForSynapseDB
    db_name: synapse
    db_host: 127.0.0.1
