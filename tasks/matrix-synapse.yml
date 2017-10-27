@@ -23,6 +23,9 @@
    - python-jinja2
    - python-bleach
    - matrix-synapse
+   - libxml2-dev
+   - python-lxml
+   - python-netaddr
    - postgresql   # postgres backend
    - postgresql-contrib   # postgres backend
 
@@ -120,6 +123,10 @@
          enable_notifs: {{ email_enable_notifs }}
          smtp_host: '{{ email_smtp_host }}'
          smtp_port: {{ email_smtp_port }}
+         smtp_user: '{{ email_smtp_user }}'
+         smtp_pass: '{{ email_smtp_pass }}'
+         email_riot_base_url: '{{ email_riot_base_url }}'
+         require_transport_security: '{{ email_require_transport_security }}'
          notif_from: '{{ email_notif_from }}'
          app_name: Matrix
          template_dir: /opt/synapse/res/templates

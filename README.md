@@ -143,7 +143,9 @@ situation, it's still not good practice to do it in the first place. See https:/
    email_notif_for_new_users: true
    email_smtp_auth: true
    email_smtp_user: 'chat@example.com'
-   email_smtp_passwd: 'MYverySECRETpassword'
+   email_smtp_pass: 'MYverySECRETpassword'
+   email_riot_base_url: 'https://matrix.example.com'
+   email_require_transport_security: 'True'
    db_password: ReplaceThisWithThePostgresqlPasswordForSynapseDB
    db_name: synapse
    db_host: 127.0.0.1
