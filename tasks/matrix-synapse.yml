@@ -125,8 +125,8 @@
          smtp_port: {{ email_smtp_port }}
          smtp_user: '{{ email_smtp_user }}'
          smtp_pass: '{{ email_smtp_pass }}'
-         email_riot_base_url: '{{ email_riot_base_url }}'
-         require_transport_security: '{{ email_require_transport_security }}'
+         riot_base_url: '{{ email_riot_base_url }}'
+         require_transport_security: {{ email_require_transport_security }}
          notif_from: '{{ email_notif_from }}'
          app_name: Matrix
          template_dir: /opt/synapse/res/templates
