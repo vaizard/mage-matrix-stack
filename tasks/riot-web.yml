@@ -39,6 +39,15 @@
   args:
     chdir: /opt/riot-web
 
+- name: Configure client_max_body_size
+  lineinfile: dest=/etc/nginx/nginx.conf
+  args:
+    regexp: "^(.*)client_max_body_size(.*)"
+    line: "	client_max_body_size {{ max_upload_size }};"
+  notify:
+    - restart nginx
+
+
 - name: Ensure nginx serving riot is configured and started
   template:
     src: nginx-default.j2
