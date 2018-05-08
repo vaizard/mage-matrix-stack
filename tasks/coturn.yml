@@ -1,7 +1,7 @@
 ---
 
 - name: Install packages needed to compile coturn server
-  action: apt pkg={{item}} state=installed
+  action: apt pkg={{item}} state=present
   with_items:
    - coturn
    
@@ -29,10 +29,18 @@
     regexp: "^realm="
     line: "realm={{ hostname_server }}"
 
+- name: Configure coturn to not peer internal ips
+  blockinfile:
+    dest: /etc/turnserver.conf
+    insertafter: EOF
+    block: |
+      denied-peer-ip=10.0.0.0-10.255.255.255
+      denied-peer-ip=192.168.0.0-192.168.255.255
+      denied-peer-ip=172.16.0.0-172.31.255.255
+
 - name: Setting /etc/default/coturn
   lineinfile: dest=/etc/default/coturn
   args:
-#    regexp: "^#TURNSERVER_ENABLED=1"
     line: "TURNSERVER_ENABLED=1"
 
 - name: Start turn server

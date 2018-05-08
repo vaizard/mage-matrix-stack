@@ -28,3 +28,7 @@ email_notif_for_new_users: true
 email_smtp_auth: false
 email_smtp_user: YOURSMTPUSERNAME
 email_smtp_passwd: YOURSMTPPASSWORD
+restrict_federation: true
+piwik_enable: false
+piwik_url: https://example.piwik.site
+max_upload_size: "32M"

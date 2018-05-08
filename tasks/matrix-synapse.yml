@@ -7,7 +7,7 @@
   command: add-apt-repository -s "https://matrix.org/packages/debian/" 
   
 - name: Install packages needed by matrix-synapse
-  action: apt pkg={{item}} state=installed update_cache=yes
+  action: apt pkg={{item}} state=present update_cache=yes
   with_items:
    - build-essential
    - python2.7-dev
@@ -64,6 +64,11 @@
     regexp: "^(.*)registration_shared_secret:(.*)"
     line: "registration_shared_secret: '{{ registration_shared_secret }}'"
 
+- name: Configure max_upload_size
+  lineinfile: dest=/etc/matrix-synapse/homeserver.yaml
+  args:
+    regexp: "^(.*)max_upload_size:(.*)"
+    line: "max_upload_size: '{{ max_upload_size }}'"
 
 - name: Configure if captchas are enabled by default or not
   lineinfile: dest=/etc/matrix-synapse/homeserver.yaml
@@ -144,7 +149,17 @@
               cp_min: {{ db_cp_min }}
               cp_max: {{ db_cp_max }}
 
-     
+      url_preview_ip_range_blacklist:
+        - '127.0.0.0/8'
+        - '10.0.0.0/8'
+        - '172.16.0.0/12'
+        - '192.168.0.0/16'
+
+      {% if restrict_federation %}
+      federation_domain_whitelist:
+        - {{ hostname_server }}
+      {% endif %}
+
 - name: Start matrix-synapse server
   service: name=matrix-synapse state=restarted
 

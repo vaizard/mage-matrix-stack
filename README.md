@@ -44,6 +44,10 @@ Riot (or other apps) due to sharing the same domain. While some coarse mitigatio
 situation, it's still not good practice to do it in the first place. See https://github.com/vector-im/vector-web/issues/1977 for details.
 
 
+### Federation
+
+By default federation is turned of for security reasons. To turn it on, set `restrict_federation: false`.
+
 ```
 ## Example playbook
 
@@ -152,6 +156,7 @@ situation, it's still not good practice to do it in the first place. See https:/
    db_cp_min: 5
    db_cp_max: 10
    riot_version: HEAD
+   restrict_federation: true
    # mage.postgresql vars
    postgresql_version: 9.5
    postgresql_databases:
