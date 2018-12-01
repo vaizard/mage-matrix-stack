@@ -38,8 +38,11 @@
     - pip
     - setuptools
 
-- name: PIP pynacl upgrade
-  pip: name=pynacl extra_args='--upgrade' # pip install --upgrade --force "pynacl==0.3.0"
+- name: PIP package upgrades
+  pip: name={{ item }} extra_args='--upgrade' # pip install --upgrade --force "{{ item }}"
+  with_items:
+    - pynacl
+    - bcrypt
 
 - name: Configure if registrations are enabled by default or not
   lineinfile: dest=/etc/matrix-synapse/homeserver.yaml
@@ -115,6 +118,21 @@
     
 
 # All the other required configuration
+
+- name: Ensure template dir exists
+  file: path=/opt/synapse/res/templates state=directory
+
+- name: "Configure /opt/synapse/res/templates/* files"
+  copy: src="synapse-templates/{{ item }}" dest="/opt/synapse/res/templates/{{ item }}"
+  with_items:
+    - "mail.css"
+    - "mail-Vector.css"
+    - "notif.html"
+    - "notif_mail.html"
+    - "notif_mail.txt"
+    - "notif.txt"
+    - "room.html"
+    - "room.txt"
 
 - name: Configuring report_stats, public_baseurl, email_notifs and database
   blockinfile:
