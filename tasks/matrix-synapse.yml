@@ -1,11 +1,14 @@
 ---
 
 - name: Add matrix-synapse repo gpg key
-  command: apt-key adv --keyserver keyserver.ubuntu.com --recv-keys AD0592FE47F0DF61
+  apt_key:
+    keyserver: keyserver.ubuntu.com
+    id: AD0592FE47F0DF61
 
 - name: Add matrix-synapse repo
-  command: add-apt-repository -s "https://matrix.org/packages/debian/" 
-  
+  apt_repository:
+    repo: "deb https://matrix.org/packages/debian/ {{ ansible_lsb.codename|lower }} main"
+
 - name: Install packages needed by matrix-synapse
   action: apt pkg={{item}} state=present update_cache=yes
   with_items:
@@ -29,18 +32,20 @@
    - postgresql   # postgres backend
    - postgresql-contrib   # postgres backend
 
-- name: Clone synapse from github
-  git: repo=https://github.com/matrix-org/synapse.git dest=/opt/synapse version=HEAD
+#- name: Clone synapse from github
+#  git: repo=https://github.com/matrix-org/synapse.git dest=/opt/synapse version=HEAD
 
-- name: PIP upgrades
-  action: pip name={{ item }} extra_args='--upgrade' # pip install --upgrade pip
-  with_items:
-    - pip
-    - setuptools
+#- name: PIP upgrades
+#  action: pip name={{ item }} extra_args='--upgrade' # pip install --upgrade pip
+#  with_items:
+#    - pip
+#    - setuptools
 
 - name: PIP package upgrades
   pip: name={{ item }} extra_args='--upgrade' # pip install --upgrade --force "{{ item }}"
   with_items:
+    - pip
+    - setuptools
     - pynacl
     - bcrypt
 
@@ -50,6 +55,9 @@
     regexp: "^(.*)server_name:(.*)"
     line: "server_name: '{{ hostname_server }}'"
 
+# The reason for using patch here is the fact that we want to set `x_forwarded: true`
+# Only for port 8008, so its easier to patch, then to write a crazy regexp here.
+# Reasons for only wanting this for port 8008 are explained in matrix-synapse's readme.
 - name: Patching /etc/matrix-synapse/homeserver.yaml to expect proxy/loadbalancer for webclient traffic
   patch: >
     src=homeserver.yaml.patch

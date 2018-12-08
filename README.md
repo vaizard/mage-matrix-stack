@@ -1,14 +1,6 @@
-# Mage.matrix-stack 
-Mage is a set of Ansible roles are constructed around LXD containers and Ubuntu.
-Mage may support other Guest-OS distros on a nice-to-have basis in the following order:
-Gentoo (because its cool), Debian (because its easy to migrate to), CentOS/Rhel (because Ansilbe is cool).
-No other distribution support is planned.
+# mage-matrix-stack
 
-NOTE: To run matrix-stack in production, you should use two containers (matrix, proxy). Forcing the matrix-stack
-onto a single machine / into a single container is possible but not recommended.
-
-## Matrix container
-The matrix container sports the mage.matrix-stack role consisting of:
+Mage-matrix-stack is an Ansible role providing:
 
 - matrix-synapse (matrix server listening on ports 8448 and 8008)
 - riot-web (glossy web client / frontend to the matrix-synapse server - static webapp written in js)
@@ -16,7 +8,13 @@ The matrix container sports the mage.matrix-stack role consisting of:
 - postgres (storage for matrix-synapse)
 - nginx (serving riot-web, listening on port 80)
 
-and expects a proxy/loadbalancer sitting infront of it (this is provided by the container below)
+Mage-matrix-stack expects a proxy/loadbalancer sitting infront and terminating ssl connections.
+Mage-matrix-stack requires at least 2 GB RAM on install time, due to crazy RAM usage of npm.
+
+NOTE: To run matrix-stack in production, you should use two containers (matrix, proxy). Forcing the matrix-stack
+onto a single machine / into a single container is possible but not recommended.
+
+## Matrix container
 
 ## Proxy container
 An nginx proxy/loadbalancer container (sporting mage.nginx-proxy and mage.letsencrypt roles) consisting of

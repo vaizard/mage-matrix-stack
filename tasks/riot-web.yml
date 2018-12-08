@@ -6,7 +6,7 @@
     state: present
 
 - apt_repository:
-    repo: "deb https://deb.nodesource.com/node_7.x {{ ansible_distribution_release }} main"
+    repo: "deb https://deb.nodesource.com/node_10.x {{ ansible_distribution_release }} main"
     state: present
 
 - name: Install riot-web dependencies
@@ -14,16 +14,16 @@
   with_items:
    - nodejs
    - nginx
-  
+
 - name: Clone riot-web from github
-  git: repo=https://github.com/vector-im/riot-web.git dest=/opt/riot-web version={{ riot_version }}
+  git: repo=https://github.com/vector-im/riot-web.git dest=/opt/riot-web version={{ riot_version }} force=yes
 
 - name: Call npm install
   shell: npm install
   args:
     chdir: /opt/riot-web
 
-- name: Install riot-web's config file
+- name: "Install riot-web's config file"
   template:
     src: riot.config.j2
     dest: /opt/riot-web/config.json
@@ -33,7 +33,7 @@
   # We have put some coarse mitigations into place to try to protect against this situation, but it's still not good practice to do it in the first place. 
   # See https://github.com/vector-im/vector-web/issues/1977 for more details.
   # See also https://github.com/matrix-org/synapse#using-a-reverse-proxy-with-synapse to see why we use port 443 here.
-    
+
 - name: Call npm run dist
   shell: npm run dist
   args:
@@ -43,10 +43,10 @@
   lineinfile: dest=/etc/nginx/nginx.conf
   args:
     regexp: "^(.*)client_max_body_size(.*)"
-    line: "	client_max_body_size {{ max_upload_size }};"
+    line: "	client_max_body_size {{ max_upload_size }}; # Ansible managed"
+    insertafter: "^http {"
   notify:
     - restart nginx
-
 
 - name: Ensure nginx serving riot is configured and started
   template:

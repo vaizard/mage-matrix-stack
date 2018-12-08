@@ -1,11 +1,7 @@
---- homeserver.yaml	2016-12-31 20:09:28.770325332 +0000
-+++ homeserver.yaml	2016-12-31 20:12:57.873152913 +0000
-@@ -85,15 +85,15 @@
-   # Unsecure HTTP listener,
-   # For when matrix traffic passes through loadbalancer that unwraps TLS.
-   - port: 8008
-     tls: false
-     bind_address: ''
+--- homeserver.yaml.orig	2018-12-07 23:20:22.650237887 +0000
++++ homeserver.yaml	2018-12-07 23:29:25.347498184 +0000
+@@ -165,7 +165,7 @@
+     bind_addresses: ['::', '0.0.0.0']
      type: http
  
 -    x_forwarded: false
@@ -13,6 +9,3 @@
  
      resources:
        - names: [client, webclient]
-         compress: true
-       - names: [federation]
-         compress: false
