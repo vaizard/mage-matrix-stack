@@ -1,0 +1,8 @@
+{
+    "m.homeserver": {
+	"base_url": "https://{{ matrix_server_fqn_matrix }}"
+    },
+    "m.identity_server": {
+	"base_url": "{{ 'https://' + matrix_identity_servers[0] if matrix_identity_servers|length > 0 else None }}"
+    }
+}

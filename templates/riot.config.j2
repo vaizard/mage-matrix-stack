@@ -1,36 +1,43 @@
 {
-    "default_hs_url": "https://{{ hostname_server }}:443",
-    "default_is_url": "https://vector.im",
-    "disable_custom_urls": false,
-    "disable_guests": false,
+    "default_hs_url": "https://{{ matrix_server_fqn_matrix }}",
+    "default_is_url": "{{ 'https://' + matrix_identity_servers[0] if matrix_identity_servers|length > 0 else None }}",
+    "disable_custom_urls": {{ riot_disable_custom_urls | to_json }},
+    "disable_guests": {{ riot_disable_guests | to_json }},
     "disable_login_language_selector": false,
     "disable_3pid_login": false,
     "brand": "Riot",
-    "integrations_ui_url": "https://scalar.vector.im/",
-    "integrations_rest_url": "https://scalar.vector.im/api",
+    "integrations_ui_url": "{{ riot_integrations_ui_url }}",
+    "integrations_rest_url": "{{ riot_integrations_widgets_urls }}",
+    "integrations_widgets_urls": "{{ riot_integrations_widgets_urls }}",
+    "integrations_jitsi_widget_url": "{{ riot_integrations_jitsi_widget_url }}",
     "bug_report_endpoint_url": "https://riot.im/bugreports/submit",
+    "enableLabs": true,
     "features": {
         "feature_groups": "labs",
         "feature_pinning": "labs"
     },
-    "default_federate": false,
-    "welcomePageUrl": "home.html",
+    "default_federate": {{ riot_default_federate | to_json }},
     "default_theme": "light",
     "roomDirectory": {
         "servers": [
-            "{{ hostname_server }}"
+            "{{ matrix_server_fqn_matrix }}"
         ]
     },
-    "welcomeUserId": "@riot-bot:matrix.org",
-    {% if piwik_enable %}
+    {% if piwik_enabled %}
     "piwik": {
-        "url": "https://piwik.riot.im/",
-        "whitelistedHSUrls": ["https://{{ hostname_server }}"],
-        "whitelistedISUrls": ["https://{{ hostname_webapp }}", "https://{{ hostname_server }}"],
+        "url": "{{ piwik_url }}",
+        "whitelistedHSUrls": ["https://{{ matrix_server_fqn_matrix }}"],
+        "whitelistedISUrls": [""{{ 'https://' + matrix_identity_servers[0] if matrix_identity_servers|length > 0 else None }}""],
         "siteId": 1
     },
     {% endif %}
     "enable_presence_by_hs_url": {
-        "https://{{ hostname_server }}": false
+        "https://{{ matrix_server_fqn_matrix }}": false
+    },
+    "embeddedPages": {
+        {% if riot_enable_homeurl %}
+        "homeUrl": "home.html",
+        {% endif %}
+        "welcomeUrl": "welcome.html"
     }
 }

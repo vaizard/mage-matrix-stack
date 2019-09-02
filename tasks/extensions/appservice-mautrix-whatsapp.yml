@@ -1,0 +1,99 @@
+---
+
+#- set_fact:
+#    matrix_systemd_services_list: "{{ matrix_systemd_services_list + ['matrix-mautrix-whatsapp'] }}"
+#  when: ext_appservice_mautrix_whatsapp_enabled
+
+- name: Ensure go ppa is configured
+  apt_repository:
+    repo: ppa:longsleep/golang-backports
+
+- name: Ensure go is installed
+  apt:
+    name: golang-go
+    state: latest
+
+- name: Get fresh mautrix-whatsapp from github
+  git:
+    repo: https://github.com/tulir/mautrix-whatsapp
+    dest: /opt/mautrix-whatsapp
+  when: ext_appservice_mautrix_whatsapp_enabled
+
+- name: (Re)build mautrix-whatsapp
+  command: go build
+  args:
+    chdir: /opt/mautrix-whatsapp
+  when: ext_appservice_mautrix_whatsapp_enabled
+
+- name: Ensure mautrix-whatsapp config installed
+  template:
+    src: "appservice-mautrix-whatsapp.config.yaml.j2"
+    dest: "{{ ext_appservice_mautrix_whatsapp_base_path }}/config.yaml"
+    mode: 0644
+  when: ext_appservice_mautrix_whatsapp_enabled
+
+- name: Ensure mautrix-whatsapp.service installed
+  template:
+    src: "appservice-mautrix-whatsapp.service.j2"
+    dest: "/etc/systemd/system/mautrix-whatsapp.service"
+    mode: 0644
+  when: "ext_appservice_mautrix_whatsapp_enabled"
+
+- name: Check if a mautrix-whatsapp registration file exists
+  stat:
+    path: "{{ ext_appservice_mautrix_whatsapp_base_path }}/registration.yaml"
+  register: mautrix_whatsapp_registration_file_stat
+  when: "ext_appservice_mautrix_whatsapp_enabled"
+
+- name: "Generate mautrix-whatsapp registration.yaml if it doesn't exist"
+  shell:
+    cmd: "{{ ext_appservice_mautrix_whatsapp_base_path }}/mautrix-whatsapp -g -c {{ ext_appservice_mautrix_whatsapp_base_path }}/config.yaml -r {{ ext_appservice_mautrix_whatsapp_base_path }}/registration.yaml"
+  when: "ext_appservice_mautrix_whatsapp_enabled"
+
+- name: "Ensure that registration.yml belongs to {{ matrix_user }}"
+  file: 
+    path: "{{ ext_appservice_mautrix_whatsapp_base_path }}/registration.yaml"
+    owner: "{{ matrix_user }}"
+
+- name: "Ensure /run/matrix-synapse directory exists and is owned by {{ matrix-user }}"
+  file: 
+    path: "/run/matrix-synapse"
+    owner: "{{ matrix_user }}"
+    state: directory
+
+# need to start this stuff after synapse starts
+#- name: Ensure systemd reloaded and mautrix-whatsapp.service enabled and restarted
+#  systemd:
+#    name: mautrix-whatsapp
+#    daemon_reload: yes
+#    enabled: yes
+#    state: restarted
+#  when: ext_appservice_mautrix_whatsapp_enabled
+#  notify:
+#    - restart matrix-synapse
+#    - restart mautrix-whatsapp
+
+- set_fact:
+    synapse_app_service_config_file_mautrix_whatsapp: '{{ ext_appservice_mautrix_whatsapp_base_path }}/registration.yaml'
+  when: "ext_appservice_mautrix_whatsapp_enabled"
+
+- set_fact:
+    synapse_app_service_config_files: >
+      {{ synapse_app_service_config_files }}
+      +
+      {{ ["{{ synapse_app_service_config_file_mautrix_whatsapp }}"] | to_nice_json  }}
+  when: "ext_appservice_mautrix_whatsapp_enabled"
+  notify:
+    - restart matrix-synapse
+    - restart mautrix-whatsapp
+
+
+#
+# Tasks related to getting rid of matrix-mautrix-whatsapp (if it was previously enabled)
+#
+
+- name: "Ensure matrix-mautrix-whatsapp.service doesn't exist"
+  file:
+    path: "/etc/systemd/system/matrix-mautrix-whatsapp.service"
+    state: absent
+  when: "not ext_appservice_mautrix_whatsapp_enabled"

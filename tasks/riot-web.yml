@@ -1,45 +1,52 @@
 ---
 
-- name: Add nodesource apt_keys
+- name: "riot-web / add apt keys"
   apt_key:
-    url: "https://deb.nodesource.com/gpgkey/nodesource.gpg.key"
+    url: "{{ item }}"
     state: present
-
-- apt_repository:
-    repo: "deb https://deb.nodesource.com/node_10.x {{ ansible_distribution_release }} main"
-    state: present
-
-- name: Install riot-web dependencies
-  action: apt pkg={{item}} state=latest update_cache=yes
   with_items:
-   - nodejs
-   - nginx
+    - "https://dl.yarnpkg.com/debian/pubkey.gpg"
 
-- name: Clone riot-web from github
+- name: "riot-web / add apt repos"
+  apt_repository:
+    repo: "{{ item }}"
+    state: present
+  with_items:
+    - "deb https://dl.yarnpkg.com/debian/ stable main"
+
+- name: "riot-web / install dependencies"
+  apt:
+    state: latest
+    update_cache: yes
+    name:
+      #- nodejs
+      - yarn
+      - nginx
+
+- name: "riot-web / clone riot-web from Github"
   git: repo=https://github.com/vector-im/riot-web.git dest=/opt/riot-web version={{ riot_version }} force=yes
 
-- name: Call npm install
-  shell: npm install
+- name: "riot-web / npm install"
+  shell: yarn install
   args:
     chdir: /opt/riot-web
 
-- name: "Install riot-web's config file"
+- name: "riot-web / update config.json"
   template:
-    src: riot.config.j2
-    dest: /opt/riot-web/config.json
-  # We do not recommend running Riot from the same domain name as your Matrix homeserver. The reason is the risk of XSS (cross-site-scripting) vulnerabilities 
-  # that could occur if someone caused Riot to load and render malicious user generated content from a Matrix API which then had trusted access to Riot (or other apps) 
-  # due to sharing the same domain.
-  # We have put some coarse mitigations into place to try to protect against this situation, but it's still not good practice to do it in the first place. 
-  # See https://github.com/vector-im/vector-web/issues/1977 for more details.
-  # See also https://github.com/matrix-org/synapse#using-a-reverse-proxy-with-synapse to see why we use port 443 here.
+    src: "riot.config.j2"
+    dest: "/opt/riot-web/config.json"
 
-- name: Call npm run dist
-  shell: npm run dist
+#- name: "riot-web / update config.{{ matrix_server_fqn_riot }}.json"
+#  template:
+#    src: "riot.config.j2"
+#    dest: "/opt/riot-web/config.{{ matrix_server_fqn_riot }}.json"
+
+- name: "riot-web / npm run dist"
+  shell: yarn dist
   args:
     chdir: /opt/riot-web
 
-- name: Configure client_max_body_size
+- name: "riot-web / set nginx's client_max_body_size"
   lineinfile: dest=/etc/nginx/nginx.conf
   args:
     regexp: "^(.*)client_max_body_size(.*)"
@@ -48,12 +55,30 @@
   notify:
     - restart nginx
 
-- name: Ensure nginx serving riot is configured and started
+- name: "riot-web / configure default nginx site to serve riot-web, restart nginx"
   template:
     src: nginx-default.j2
     dest: /etc/nginx/sites-available/default
   notify:
     - restart nginx
 
-- name: Make sure nginx is enabled
-  service: name=nginx enabled=yes
+- name: "riot-web / make sure nginx service is enabled"
+  service: name=nginx enabled=yes state=restarted
+
+- name: "riot-web / post-install check"
+  uri:
+    url: "https://{{ matrix_server_fqn_riot }}/config.json"
+    follow_redirects: false
+    validate_certs: yes
+  register: result_riot_web
+  ignore_errors: true
+
+- name: "riot-web / post-install check / fail on errors"
+  fail:
+    msg: "Failed checking riot-web is up at `{{ matrix_server_fqn_riot }}` (checked endpoint: `https://{{ matrix_server_fqn_riot }}/config.json`). Is Riot running? Is port 443 open in your firewall? Are the SSL certs ok? Is the config.json a valid json? Full error: {{ result_riot_web }}"
+  when: "result_riot_web.failed or 'json' not in result_riot_web"
+
+- name: "Riot-web / post-install check / pass on working riot-web"
+  debug:
+    msg: "riot-web at `{{ matrix_server_fqn_riot }}` is working (checked endpoint: `https://{{ matrix_server_fqn_riot }}/config.json`)"
+

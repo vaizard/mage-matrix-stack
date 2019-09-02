@@ -1,0 +1,31 @@
+---
+
+###
+### Convert mxisd_config_ext to dict and combine it with mxisd_conig
+###
+
+# Doing `|from_yaml` when the extension contains nothing yields an empty string ("").
+# We need to ensure it's a dictionary or `|combine` (when building `matrix_mxisd_configuration`) will fail later.
+mxisd_config_ext_dict: "{{ mxisd_config_ext|from_yaml if mxisd_config_ext|from_yaml else {} }}"
+
+# Holds the final mxisd configuration (a combination of the default and its extension).
+# You most likely don't need to touch this variable. Instead, see `matrix_mxisd_configuration_yaml`.
+mxisd_configuration: "{{ mxisd_config|from_yaml|combine(mxisd_config_ext_dict, recursive=True) }}"
+
+mxisd_config_path: "/etc/mxisd"
+mxisd_data_path: "/var/mxisd"
+
+###
+### Synapse stuff
+###
+
+synapse_registration_shared_secret: "{{ synapse_macaroon_secret_key }}"
+synapse_form_secret: "{{ synapse_macaroon_secret_key }}"
+
+# helper variables
+synapse_password_providers_enabled: false
+synapse_additional_loggers: []
+synapse_app_service_config_files: []
+
+# user under which synapse runs
+matrix_user: matrix-synapse

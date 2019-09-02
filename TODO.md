@@ -1,0 +1,2 @@
+- authentintication on prometheus stats
+- well known proxying

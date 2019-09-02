@@ -1,53 +1,51 @@
 ---
 
-- name: Install packages needed to compile coturn server
-  action: apt pkg={{item}} state=present
-  with_items:
-   - coturn
-   
-- name: Configure coturn lt-cred-mech
-  lineinfile: dest=/etc/turnserver.conf
-  args:
-    regexp: "^lt-cred-mech"
-    line: "lt-cred-mech"
+- name: "coturn / get public IP"
+  ipify_facts:
+  when: turn_external_ip_address == ""
 
-- name: Configure coturn use-auth-secret
-  lineinfile: dest=/etc/turnserver.conf
-  args:
-    regexp: "^use-auth-secret"
-    line: "use-auth-secret"
+- name: "coturn / set public IP"
+  set_fact:
+    turn_external_ip_address: "{{ ipify_public_ip }}"
+  when: turn_external_ip_address == ""
 
-- name: Configure coturn static-auth-secret
-  lineinfile: dest=/etc/turnserver.conf
-  args:
-    regexp: "^static-auth-secret="
-    line: "static-auth-secret={{ turn_shared_secret }}"
 
-- name: Configure coturn realm
-  lineinfile: dest=/etc/turnserver.conf
-  args:
-    regexp: "^realm="
-    line: "realm={{ hostname_server }}"
+- name: "coturn / install packages"
+  apt:
+    state: present
+    name:
+      - coturn
 
-- name: Configure coturn to not peer internal ips
+- name: "coturn / configure the server"
   blockinfile:
     dest: /etc/turnserver.conf
     insertafter: EOF
     block: |
+      lt-cred-mech
+      use-auth-secret
+      static-auth-secret={{ turn_shared_secret }}
+      realm={{ matrix_server_fqn_matrix }}
+      cert=/etc/matrix-synapse/homeserver.tls.crt
+      pkey=/etc/matrix-synapse/homeserver.tls.key
+      dh-file=/etc/matrix-synapse/homeserver.tls.dh
+      cipher-list="HIGH"
+      min-port={{ turn_udp_min_port }}
+      max-port={{ turn_udp_max_port }}
+      external-ip={{ turn_external_ip_address }}
+      log-file=/var/log/turn.log
+      userdb=/var/lib/turnserver.db
+      no-cli
+      # blocking local, link-local and ubuntu fan networks
       denied-peer-ip=10.0.0.0-10.255.255.255
       denied-peer-ip=192.168.0.0-192.168.255.255
       denied-peer-ip=172.16.0.0-172.31.255.255
       denied-peer-ip=240.0.0.0-240.255.255.255
       denied-peer-ip=169.254.0.0-169.254.255.255
-      # blocking local, link-local and ubuntu fan networks
 
-- name: Setting /etc/default/coturn
+- name: "coturn / set /etc/default/coturn"
   lineinfile: dest=/etc/default/coturn
   args:
     line: "TURNSERVER_ENABLED=1"
 
-- name: Start turn server
-  service: name=coturn state=started
-
-- name: Make sure coturn is enabled
-  service: name=coturn enabled=yes
+- name: "coturn / ensure turn server is enabled and (re)started"
+  service: name=coturn state=restarted enabled=yes

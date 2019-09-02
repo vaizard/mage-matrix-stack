@@ -1,34 +1,277 @@
 ---
-username: matrix
-git_repo: https://github.com/matrix-org/synapse/tarball/master
-hostname_server: server.localhost
-hostname_webapp: webapp.localhost
-riot_version: HEAD
-enable_registration: true
-enable_registration_captcha: false
-recaptcha_private_key: YOURPRIVATEKEYHERE
-recaptcha_public_key: YOURPUBLICKEYHERE
-turn_shared_secret: YOURSHAREDSECRETHERE
-registration_shared_secret: YOUREXTREMELYSECRETREGISTRATIONSECRET
-report_stats: true
-guest_access: true
+
+############################################################
+### Matrix stack general configuration #####################
+############################################################
+
+### Components
+mxisd_enabled: true
+mxisd_version: "1.4.5"
+piwik_enabled: false
+piwik_url: https://example.piwik.site
+riot_version: "v1.3.3"
+
+### Domain names
+matrix_domain: "example.com"
+matrix_server_fqn_matrix: "matrix.{{ matrix_domain }}"
+matrix_server_fqn_riot: "chat.{{ matrix_domain }}"
+matrix_server_fqn_identity: "matrix.{{ matrix_domain }}"
+matrix_identity_servers_public: ['vector.im', 'matrix.org']
+matrix_identity_servers: "{{ [matrix_server_fqn_identity] if mxisd_enabled else matrix_identity_servers_public }}"
+
+### Basic behavior
+disable_federation: false
+synapse_federation_domain_whitelist:
+max_upload_size: "32M"
+
+### Database connection
 db_engine: psycopg2
 db_name: synapse
 db_user: synapse
-db_password: THEPASSWORDFORTHESYNAPSEUSER
+db_pass: yourpassword
 db_host: 127.0.0.1
 db_cp_min: 5
 db_cp_max: 10
-public_baseurl: http://localhost/
-email_enable_notifs: true
+
+### E-mail notifications
 email_smtp_host: 'localhost'
 email_smtp_port: 587
-email_notif_from: 'Your Friendly %(app)s Home Server <matrix@example.com>'
-email_notif_for_new_users: true
 email_smtp_auth: false
 email_smtp_user: YOURSMTPUSERNAME
-email_smtp_passwd: YOURSMTPPASSWORD
-restrict_federation: true
-piwik_enable: false
-piwik_url: https://example.piwik.site
-max_upload_size: "32M"
+email_smtp_pass: YOURSMTPPASSWORD
+email_smtp_from: "{{ email_smtp_user }}"
+email_smtp_tls: true
+
+### Matrix users
+matrix_users: []
+#matrix_users:
+#  - user: username
+#    pass: password
+#    admin: true|false 
+
+
+############################################################
+### Synapse configuration ##################################
+############################################################
+
+synapse_default_room_version: 4
+
+### Security (the macaroon key must be defined, passowrd peppering is optional for extra security, must not be changed after initial setup
+synapse_macaroon_secret_key: ""
+synapse_password_pepper: ""
+
+### Report stats to the devs
+synapse_report_stats: true
+
+### Track presence status (online, offline, unavail) for users. Disabling will decrease server load a lot when there rooms with many users
+synapse_use_presence: true
+
+### E-mail notifications (smtp is set up according e-mail notification section in general config)
+synapse_notifs_enabled: true
+synapse_notifs_from: 'Your Friendly %(app)s Home Server <matrix@example.com>'
+synapse_notifs_for_new_users: true
+
+# Metrics monitoring with Prometheus, see https://github.com/matrix-org/synapse/blob/master/docs/metrics-howto.rst
+synapse_metrics_enabled: true
+synapse_metrics_port: 9092
+
+### Registration and recaptcha
+synapse_recaptcha_private_key: YOURPRIVATEKEYHERE
+synapse_recaptcha_public_key: YOURPUBLICKEYHERE
+
+synapse_enable_registration: true
+synapse_enable_registration_captcha: false
+synapse_registration_shared_secret: "{{ synapse_macaroon_secret_key }}"
+synapse_form_secret: "{{ synapse_macaroon_secret_key }}"
+synapse_allow_guest_access: true
+synapse_auto_join_rooms: [] # New users will be auto-joined to these rooms. List rooms as e.g. `#address:example.com`
+synapse_autocreate_auto_join_rooms: true # If true, auto-join rooms will be created automatically if they don't already exist
+
+### Other settings
+synapse_ext_path: "/opt/venvs/matrix-synapse/lib/python3.6/site-packages"
+matrix_username: matrix-synapse
+git_repo: https://github.com/matrix-org/synapse/tarball/master
+
+synapse_log_file_max_size_mb: 100
+synapse_log_file_max_count: 10
+synapse_log_level: INFO
+synapse_log_level_storage_sql: INFO
+synapse_log_level_root: INFO
+
+############################################################
+### Synapse password providers #############################
+############################################################
+
+### Enable this to activate the REST auth password provider module.
+# See: https://github.com/kamax-io/matrix-synapse-rest-auth
+ext_password_provider_rest_auth_enabled: false
+ext_password_provider_rest_auth_download_url: "https://raw.githubusercontent.com/kamax-io/matrix-synapse-rest-auth/v0.1.2/rest_auth_provider.py"
+ext_password_provider_rest_auth_endpoint: "http://127.0.0.1:8090"
+ext_password_provider_rest_auth_registration_enforce_lowercase: false
+ext_password_provider_rest_auth_registration_profile_name_autofill: true
+ext_password_provider_rest_auth_login_profile_name_autofill: false
+
+### Enable this to activate the Shared Secret Auth password provider module.
+# See: https://github.com/devture/matrix-synapse-shared-secret-auth
+ext_password_provider_shared_secret_auth_enabled: false
+ext_password_provider_shared_secret_auth_download_url: "https://raw.githubusercontent.com/devture/matrix-synapse-shared-secret-auth/1.0.1/shared_secret_authenticator.py"
+ext_password_provider_shared_secret_auth_shared_secret: ""
+
+### Enable this to activate LDAP password provider
+ext_password_provider_ldap_enabled: false
+ext_password_provider_ldap_uri: "ldap://ldap.mydomain.tld:389"
+ext_password_provider_ldap_start_tls: true
+ext_password_provider_ldap_base: ""
+ext_password_provider_ldap_attributes_uid: "uid"
+ext_password_provider_ldap_attributes_mail: "mail"
+ext_password_provider_ldap_attributes_name: "cn"
+ext_password_provider_ldap_bind_dn: ""
+ext_password_provider_ldap_bind_password: ""
+ext_password_provider_ldap_filter: ""
+
+############################################################
+### Synapse appservices ####################################
+############################################################
+
+### Enable this to activate the Matrix <-> Whatsapp bridge
+ext_appservice_mautrix_whatsapp_enabled: true
+#ext_appservice_mautrix_whatsapp_docker_image: "tulir/mautrix-whatsapp:latest"
+ext_appservice_mautrix_whatsapp_base_path: "/opt/mautrix-whatsapp"
+
+#############################################################
+### Riot config #############################################
+#############################################################
+
+riot_disable_custom_urls: false
+riot_disable_guests: "{{ false if synapse_allow_guest_access else true }}"
+riot_integrations_ui_url: "https://scalar.vector.im/"
+riot_integrations_rest_url: "https://scalar.vector.im/api"
+riot_integrations_widgets_urls: "https://scalar.vector.im/api"
+riot_integrations_jitsi_widget_url: "https://scalar.vector.im/api/widgets/jitsi.html"
+riot_default_federate: "{{ false if disable_federation else true }}"
+riot_enable_homeurl: false
+
+# We intentionally disable the welcome-bot by omitting the `"welcomeUserId": "@riot-bot:matrix.org",` from Riot's config.
+# The reason is, that  if you have federate off but the welcome bot is on matrix.org, you'll just force new users into
+# an empty room with a cryptic error. If you have federation on, the bot isn't such a great help to justify the breakage
+
+
+#############################################################
+### Matrix stack defaults you usually don't need to touch ###
+#############################################################
+
+### turn server
+turn_shared_secret: ""
+turn_udp_min_port: 49750
+turn_udp_max_port: 49950
+turn_external_ip_address: ""
+
+
+############################################################
+### Mxsid ##################################################
+############################################################
+
+# Your identity server is private by default.
+# To ensure maximum discovery, you can make your identity server
+# also forward lookups to the central matrix.org Identity server
+# (at the cost of potentially leaking all your contacts information).
+# Enabling this is discouraged. Learn more here: https://github.com/kamax-io/mxisd/blob/master/docs/features/identity.md#lookups
+mxisd_matrixorg_forwarding_enabled: false
+
+# mxisd has serveral supported identity stores.
+# One of them is storing identities directly in Synapse's database.
+# Learn more here: https://github.com/kamax-matrix/mxisd/blob/master/docs/stores/synapse.md
+mxisd_synapsesql_enabled: true
+mxisd_synapsesql_type: "postgresql"
+mxisd_synapsesql_connection: "//127.0.0.1/{{ db_name }}?user={{ db_user }}&password={{ db_pass }}"
+
+# DNS overwrites are useful for telling mxisd how it can reach the homeserver directly.
+# Useful when reverse-proxying certain URLs (e.g. `/_matrix/client/r0/user_directory/search`) to mxisd,
+# so that mxisd can rewrite the original URL to one that would reach the homeserver.
+mxisd_dns_overwrite_enabled: true
+mxisd_dns_overwrite_homeserver_client_name: "{{ matrix_server_fqn_matrix }}"
+mxisd_dns_overwrite_homeserver_client_value: "http://localhost:8008"
+
+# Setting up email-sending settings is required for using mxisd.
+mxid_threepid_medium_email_identity_from: "{{ email_smtp_from }}"
+mxid_threepid_medium_email_connectors_smtp_host: "{{ email_smtp_host }}"
+mxid_threepid_medium_email_connectors_smtp_port: "{{ email_smtp_port }}"
+mxid_threepid_medium_email_connectors_smtp_tls: "{{ '2' if email_smtp_tls else '0' }}"
+mxid_threepid_medium_email_connectors_smtp_login: "{{ email_smtp_user }}"
+mxid_threepid_medium_email_connectors_smtp_password: "{{ email_smtp_pass }}"
+
+# Default mxisd configuration template which covers the generic use case.
+# You can customize it by controlling the various variables inside it.
+#
+# For a more advanced customization, you can extend the default (see `matrix_mxisd_configuration_extension_yaml`)
+# or completely replace this variable with your own template.
+mxisd_config: |
+  #jinja2: lstrip_blocks: True
+  matrix:
+    domain: {{ matrix_domain }}
+
+  server:
+    name: {{ matrix_server_fqn_matrix }}
+
+  key:
+    path: /var/lib/mxisd/sign.key
+
+  storage:
+    provider:
+      sqlite:
+        database: /var/lib/mxisd/mxisd.db
+
+  {% if mxisd_dns_overwrite_enabled %}
+  dns:
+    overwrite:
+      homeserver:
+        client:
+          - name: {{ mxisd_dns_overwrite_homeserver_client_name }}
+            value: {{ mxisd_dns_overwrite_homeserver_client_value }}
+  {% endif %}
+
+  {% if mxisd_matrixorg_forwarding_enabled %}
+  forward:
+    servers: ['matrix-org']
+  {% endif %}
+
+  threepid:
+    medium:
+      email:
+        identity:
+          from: {{ mxid_threepid_medium_email_identity_from }}
+        connectors:
+          smtp:
+            host: {{ mxid_threepid_medium_email_connectors_smtp_host }}
+            port: {{ mxid_threepid_medium_email_connectors_smtp_port }}
+            tls: {{ mxid_threepid_medium_email_connectors_smtp_tls }}
+            login: {{ mxid_threepid_medium_email_connectors_smtp_login }}
+            password: {{ mxid_threepid_medium_email_connectors_smtp_password }}
+
+  synapseSql:
+    enabled: {{ mxisd_synapsesql_enabled }}
+    type: {{ mxisd_synapsesql_type }}
+    connection: {{ mxisd_synapsesql_connection }}
+
+
+mxisd_config_ext: |
+  # Your custom YAML configuration for mxisd goes here.
+  # This configuration extends the default starting configuration (`matrix_mxisd_configuration_yaml`).
+  #
+  # You can override individual variables from the default configuration, or introduce new ones.
+  #
+  # If you need something more special, you can take full control by
+  # completely redefining `matrix_mxisd_configuration_yaml`.
+  #
+  # Example configuration extension follows:
+  #
+  # ldap:
+  #   enabled: true
+  #   connection:
+  #     host: ldapHostnameOrIp
+  #     tls: false
+  #     port: 389
+  #     baseDns: ['OU=Users,DC=example,DC=org']
+  #     bindDn: CN=My Mxisd User,OU=Users,DC=example,DC=org
+  #     bindPassword: TheUserPassword
+

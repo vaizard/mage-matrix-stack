@@ -1,0 +1,38 @@
+version: 1
+
+formatters:
+  precise:
+   format: '%(asctime)s - %(name)s - %(lineno)d - %(levelname)s - %(request)s- %(message)s'
+
+filters:
+  context:
+    (): synapse.util.logcontext.LoggingContextFilter
+    request: ""
+
+handlers:
+  file:
+    class: logging.handlers.RotatingFileHandler
+    formatter: precise
+    filename: /var/log/matrix-synapse/homeserver.log
+    maxBytes: {{ synapse_log_file_max_size_mb * 1024 * 1024 }}
+    backupCount: {{ synapse_log_file_max_count }}
+    filters: [context]
+    encoding: utf8
+  console:
+    class: logging.StreamHandler
+    formatter: precise
+    level: WARN
+
+loggers:
+    synapse:
+        level: {{ synapse_log_level }}
+    synapse.storage.SQL:
+        level: {{ synapse_log_level_storage_sql }}
+{% for logger in synapse_additional_loggers %}
+    {{ logger.name }}:
+        level: {{ logger.level }}
+{% endfor %}
+
+root:
+    level: {{ synapse_log_level_root }}
+    handlers: [file, console]
