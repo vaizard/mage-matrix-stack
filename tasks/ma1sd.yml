@@ -1,0 +1,45 @@
+---
+
+- name: Install matrix-ma1sd dependencies
+  apt:
+    state: present
+    update_cache: yes
+    name: openjdk-8-jre-headless
+
+- name: "Ensure /var/ma1sd directory exists"
+  file:
+    path: /var/ma1sd
+    state: directory
+
+- name: Install matrix-ma1sd
+  apt:
+    deb: "https://github.com/ma1uta/ma1sd/releases/download/{{ ma1sd_version }}/ma1sd_{{ ma1sd_version }}_all.deb"
+
+- name: Ensure ma1sd config installed
+  copy:
+    content: "{{ ma1sd_configuration|to_nice_yaml }}"
+    dest: "{{ ma1sd_config_path }}/ma1sd.yaml"
+    mode: 0644
+
+- name: Ensure ma1sd server is restarted and enabled
+  service: name=ma1sd state=restarted enabled=yes
+
+- set_fact:
+    ma1sd_url_endpoint_public: "https://{{ matrix_server_fqn_matrix }}/_matrix/identity/api/v1"
+
+- name: Check ma1sd Identity Service
+  uri:
+    url: "{{ ma1sd_url_endpoint_public }}"
+    follow_redirects: false
+    validate_certs: true
+  register: result_ma1sd
+  ignore_errors: true
+
+- name: Fail if ma1sd Identity Service not working
+  fail:
+    msg: "Failed checking ma1sd is up at `{{ matrix_server_fqn_matrix }}` (checked endpoint: `{{ ma1sd_url_endpoint_public }}`). Is ma1sd running? Is port 443 open in your firewall? Full error: {{ result_ma1sd }}"
+  when: "result_ma1sd.failed or 'json' not in result_ma1sd"
+
+- name: Report working ma1sd Identity Service
+  debug:
+    msg: "ma1sd at `{{ matrix_server_fqn_matrix }}` is working (checked endpoint: `{{ ma1sd_url_endpoint_public }}`)"

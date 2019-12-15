@@ -6,6 +6,7 @@
     state: present
   with_items:
     - "https://dl.yarnpkg.com/debian/pubkey.gpg"
+    - "https://deb.nodesource.com/gpgkey/nodesource.gpg.key"
 
 - name: "riot-web / add apt repos"
   apt_repository:
@@ -13,13 +14,14 @@
     state: present
   with_items:
     - "deb https://dl.yarnpkg.com/debian/ stable main"
+    - "deb https://deb.nodesource.com/node_12.x {{ ansible_distribution_release }} main"
 
 - name: "riot-web / install dependencies"
   apt:
     state: latest
     update_cache: yes
     name:
-      #- nodejs
+      - nodejs
       - yarn
       - nginx
 

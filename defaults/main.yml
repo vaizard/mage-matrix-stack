@@ -5,29 +5,30 @@
 ############################################################
 
 ### Components
-mxisd_enabled: true
-mxisd_version: "1.4.5"
+ma1sd_enabled: true
+ma1sd_version: "2.1.1"
 piwik_enabled: false
 piwik_url: https://example.piwik.site
-riot_version: "v1.3.3"
+riot_version: "v1.5.6"
 
 ### Domain names
 matrix_domain: "example.com"
 matrix_server_fqn_matrix: "matrix.{{ matrix_domain }}"
 matrix_server_fqn_riot: "chat.{{ matrix_domain }}"
 matrix_server_fqn_identity: "matrix.{{ matrix_domain }}"
+matrix_server_fqn_integration: "integration.{{ matrix_domain }}"
 matrix_identity_servers_public: ['vector.im', 'matrix.org']
-matrix_identity_servers: "{{ [matrix_server_fqn_identity] if mxisd_enabled else matrix_identity_servers_public }}"
+matrix_identity_servers: "{{ [matrix_server_fqn_identity] if ma1sd_enabled else matrix_identity_servers_public }}"
 
 ### Basic behavior
 disable_federation: false
-synapse_federation_domain_whitelist:
+synapse_federation_domain_whitelist: ~
 max_upload_size: "32M"
 
 ### Database connection
 db_engine: psycopg2
-db_name: synapse
-db_user: synapse
+db_pref: matrix
+db_user: matrix
 db_pass: yourpassword
 db_host: 127.0.0.1
 db_cp_min: 5
@@ -98,12 +99,15 @@ synapse_log_level: INFO
 synapse_log_level_storage_sql: INFO
 synapse_log_level_root: INFO
 
+synapse_registrations_require_3pid: []
+synapse_disable_msisdn_registration: true
+
 ############################################################
 ### Synapse password providers #############################
 ############################################################
 
 ### Enable this to activate the REST auth password provider module.
-# See: https://github.com/kamax-io/matrix-synapse-rest-auth
+# See: https://github.com/ma1uta/matrix-synapse-rest-auth
 ext_password_provider_rest_auth_enabled: false
 ext_password_provider_rest_auth_download_url: "https://raw.githubusercontent.com/kamax-io/matrix-synapse-rest-auth/v0.1.2/rest_auth_provider.py"
 ext_password_provider_rest_auth_endpoint: "http://127.0.0.1:8090"
@@ -135,8 +139,22 @@ ext_password_provider_ldap_filter: ""
 
 ### Enable this to activate the Matrix <-> Whatsapp bridge
 ext_appservice_mautrix_whatsapp_enabled: true
-#ext_appservice_mautrix_whatsapp_docker_image: "tulir/mautrix-whatsapp:latest"
 ext_appservice_mautrix_whatsapp_base_path: "/opt/mautrix-whatsapp"
+ext_appservice_mautrix_whatsapp_db: postgres # allowed values: postgres, sqlite
+
+
+### Enable this to activate the Matrix <-> Facebook bridge
+ext_appservice_mautrix_facebook_enabled: true
+ext_appservice_mautrix_facebook_base_path: "/opt/mautrix-facebook"
+ext_appservice_mautrix_facebook_db: postgres # allowed values: postgres, sqlite
+
+############################################################
+### Bots ###################################################
+############################################################
+
+bot_maubot_enabled: true
+bot_maubot_base_path: "/opt/maubot"
+bot_maubot_db: postgres # allowed values: postgres, sqlite
 
 #############################################################
 ### Riot config #############################################
@@ -166,46 +184,45 @@ turn_udp_min_port: 49750
 turn_udp_max_port: 49950
 turn_external_ip_address: ""
 
-
 ############################################################
-### Mxsid ##################################################
+### Ma1sd ##################################################
 ############################################################
 
 # Your identity server is private by default.
 # To ensure maximum discovery, you can make your identity server
 # also forward lookups to the central matrix.org Identity server
 # (at the cost of potentially leaking all your contacts information).
-# Enabling this is discouraged. Learn more here: https://github.com/kamax-io/mxisd/blob/master/docs/features/identity.md#lookups
-mxisd_matrixorg_forwarding_enabled: false
+# Enabling this is discouraged. Learn more here: https://github.com/ma1uta/ma1sd/blob/master/docs/features/identity.md#lookups
+ma1sd_matrixorg_forwarding_enabled: false
 
-# mxisd has serveral supported identity stores.
+# ma1sd has serveral supported identity stores.
 # One of them is storing identities directly in Synapse's database.
-# Learn more here: https://github.com/kamax-matrix/mxisd/blob/master/docs/stores/synapse.md
-mxisd_synapsesql_enabled: true
-mxisd_synapsesql_type: "postgresql"
-mxisd_synapsesql_connection: "//127.0.0.1/{{ db_name }}?user={{ db_user }}&password={{ db_pass }}"
+# Learn more here: https://github.com/kamax-matrix/ma1sd/blob/master/docs/stores/synapse.md
+ma1sd_synapsesql_enabled: true
+ma1sd_synapsesql_type: "postgresql"
+ma1sd_synapsesql_connection: "//127.0.0.1/{{ db_pref }}_synapse?user={{ db_user }}&password={{ db_pass }}"
 
-# DNS overwrites are useful for telling mxisd how it can reach the homeserver directly.
-# Useful when reverse-proxying certain URLs (e.g. `/_matrix/client/r0/user_directory/search`) to mxisd,
-# so that mxisd can rewrite the original URL to one that would reach the homeserver.
-mxisd_dns_overwrite_enabled: true
-mxisd_dns_overwrite_homeserver_client_name: "{{ matrix_server_fqn_matrix }}"
-mxisd_dns_overwrite_homeserver_client_value: "http://localhost:8008"
+# DNS overwrites are useful for telling ma1sd how it can reach the homeserver directly.
+# Useful when reverse-proxying certain URLs (e.g. `/_matrix/client/r0/user_directory/search`) to ma1sd,
+# so that ma1sd can rewrite the original URL to one that would reach the homeserver.
+ma1sd_dns_overwrite_enabled: true
+ma1sd_dns_overwrite_homeserver_client_name: "{{ matrix_server_fqn_matrix }}"
+ma1sd_dns_overwrite_homeserver_client_value: "http://localhost:8008"
 
-# Setting up email-sending settings is required for using mxisd.
-mxid_threepid_medium_email_identity_from: "{{ email_smtp_from }}"
-mxid_threepid_medium_email_connectors_smtp_host: "{{ email_smtp_host }}"
-mxid_threepid_medium_email_connectors_smtp_port: "{{ email_smtp_port }}"
-mxid_threepid_medium_email_connectors_smtp_tls: "{{ '2' if email_smtp_tls else '0' }}"
-mxid_threepid_medium_email_connectors_smtp_login: "{{ email_smtp_user }}"
-mxid_threepid_medium_email_connectors_smtp_password: "{{ email_smtp_pass }}"
+# Setting up email-sending settings is required for using ma1sd.
+ma1sd_threepid_medium_email_identity_from: "{{ email_smtp_from }}"
+ma1sd_threepid_medium_email_connectors_smtp_host: "{{ email_smtp_host }}"
+ma1sd_threepid_medium_email_connectors_smtp_port: "{{ email_smtp_port }}"
+ma1sd_threepid_medium_email_connectors_smtp_tls: "{{ '2' if email_smtp_tls else '0' }}"
+ma1sd_threepid_medium_email_connectors_smtp_login: "{{ email_smtp_user }}"
+ma1sd_threepid_medium_email_connectors_smtp_password: "{{ email_smtp_pass }}"
 
-# Default mxisd configuration template which covers the generic use case.
+# Default ma1sd configuration template which covers the generic use case.
 # You can customize it by controlling the various variables inside it.
 #
-# For a more advanced customization, you can extend the default (see `matrix_mxisd_configuration_extension_yaml`)
+# For a more advanced customization, you can extend the default (see `matrix_ma1sd_configuration_extension_yaml`)
 # or completely replace this variable with your own template.
-mxisd_config: |
+ma1sd_config: |
   #jinja2: lstrip_blocks: True
   matrix:
     domain: {{ matrix_domain }}
@@ -214,23 +231,23 @@ mxisd_config: |
     name: {{ matrix_server_fqn_matrix }}
 
   key:
-    path: /var/lib/mxisd/sign.key
+    path: /var/lib/ma1sd/signing.key
 
   storage:
     provider:
       sqlite:
-        database: /var/lib/mxisd/mxisd.db
+        database: /var/lib/ma1sd/ma1sd.db
 
-  {% if mxisd_dns_overwrite_enabled %}
+  {% if ma1sd_dns_overwrite_enabled %}
   dns:
     overwrite:
       homeserver:
         client:
-          - name: {{ mxisd_dns_overwrite_homeserver_client_name }}
-            value: {{ mxisd_dns_overwrite_homeserver_client_value }}
+          - name: {{ ma1sd_dns_overwrite_homeserver_client_name }}
+            value: {{ ma1sd_dns_overwrite_homeserver_client_value }}
   {% endif %}
 
-  {% if mxisd_matrixorg_forwarding_enabled %}
+  {% if ma1sd_matrixorg_forwarding_enabled %}
   forward:
     servers: ['matrix-org']
   {% endif %}
@@ -238,30 +255,34 @@ mxisd_config: |
   threepid:
     medium:
       email:
+        generators:
+          template:
+            placeholder:
+              REGISTER_URL: "https://{{ matrix_server_fqn_riot }}/#/room/%ROOM_ID%"
         identity:
-          from: {{ mxid_threepid_medium_email_identity_from }}
+          from: {{ ma1sd_threepid_medium_email_identity_from }}
         connectors:
           smtp:
-            host: {{ mxid_threepid_medium_email_connectors_smtp_host }}
-            port: {{ mxid_threepid_medium_email_connectors_smtp_port }}
-            tls: {{ mxid_threepid_medium_email_connectors_smtp_tls }}
-            login: {{ mxid_threepid_medium_email_connectors_smtp_login }}
-            password: {{ mxid_threepid_medium_email_connectors_smtp_password }}
+            host: {{ ma1sd_threepid_medium_email_connectors_smtp_host }}
+            port: {{ ma1sd_threepid_medium_email_connectors_smtp_port }}
+            tls: {{ ma1sd_threepid_medium_email_connectors_smtp_tls }}
+            login: {{ ma1sd_threepid_medium_email_connectors_smtp_login }}
+            password: {{ ma1sd_threepid_medium_email_connectors_smtp_password }}
 
   synapseSql:
-    enabled: {{ mxisd_synapsesql_enabled }}
-    type: {{ mxisd_synapsesql_type }}
-    connection: {{ mxisd_synapsesql_connection }}
+    enabled: {{ ma1sd_synapsesql_enabled }}
+    type: {{ ma1sd_synapsesql_type }}
+    connection: {{ ma1sd_synapsesql_connection }}
 
 
-mxisd_config_ext: |
-  # Your custom YAML configuration for mxisd goes here.
-  # This configuration extends the default starting configuration (`matrix_mxisd_configuration_yaml`).
+ma1sd_config_ext: |
+  # Your custom YAML configuration for ma1sd goes here.
+  # This configuration extends the default starting configuration (`matrix_ma1sd_configuration_yaml`).
   #
   # You can override individual variables from the default configuration, or introduce new ones.
   #
   # If you need something more special, you can take full control by
-  # completely redefining `matrix_mxisd_configuration_yaml`.
+  # completely redefining `matrix_ma1sd_configuration_yaml`.
   #
   # Example configuration extension follows:
   #
@@ -272,6 +293,175 @@ mxisd_config_ext: |
   #     tls: false
   #     port: 389
   #     baseDns: ['OU=Users,DC=example,DC=org']
-  #     bindDn: CN=My Mxisd User,OU=Users,DC=example,DC=org
+  #     bindDn: CN=My ma1sd User,OU=Users,DC=example,DC=org
   #     bindPassword: TheUserPassword
+
+############################################################
+### Postgres setup #########################################
+############################################################
+
+postgresql_version: 11
+
+postgresql_users:
+ - name: "{{ db_user }}"
+   pass: "{{ db_pass }}"
+   encrypted: yes
+
+postgresql_databases:
+ - name:  "{{ db_pref }}_synapse"
+   owner: "{{ db_user }}"
+   encoding: 'UTF-8'
+   lc_collate: 'C'
+   lc_ctype: 'C'
+ - name:  "{{ db_pref }}_mautrix_facebook"
+   owner: "{{ db_user }}"
+   encoding: 'UTF-8'
+   lc_collate: 'C'
+   lc_ctype: 'C'
+ - name:  "{{ db_pref }}_mautrix_whatsapp"
+   owner: "{{ db_user }}"
+   encoding: 'UTF-8'
+   lc_collate: 'C'
+   lc_ctype: 'C'
+ - name:  "{{ db_pref }}_maubot"
+   owner: "{{ db_user }}"
+   encoding: 'UTF-8'
+   lc_collate: 'C'
+   lc_ctype: 'C'
+
+postgresql_user_privileges:
+ - name: "{{ db_user }}"
+   db:   "{{ db_pref }}_synapse"
+   priv: "ALL"
+ - name: "{{ db_user }}"
+   db:   "{{ db_pref }}_mautrix_facebook"
+   priv: "ALL"
+ - name: "{{ db_user }}"
+   db:   "{{ db_pref }}_mautrix_whatsapp"
+   priv: "ALL"
+ - name: "{{ db_user }}"
+   db:   "{{ db_pref }}_maubot"
+   priv: "ALL"
+
+
+############################################################
+### Dimension ##############################################
+############################################################
+
+# Dimension is currently unsupported by this role.
+# This is a configuration stub.
+
+dimension_enabled: false
+
+# You are required to specify an access token for Dimension to work.
+# For information on how to acquire an access token, visit https://t2bot.io/docs/access_tokens
+dimension_access_token: "YOUR ACCESS TOKEN HERE"
+
+# Users in form: ['@user1:domain.com', '@user2:domain.com']
+matrix_dimension_admins: []
+
+# Whether to allow Dimension widgets serve websites with invalid or self signed SSL certificates
+dimension_widgets_allow_self_signed_ssl_certificates: false
+
+dimension_base_path: "/opt/dimension"
+
+dimension_integrations_ui_url: "https://{{ matrix_server_fqn_integration }}/riot"
+dimension_integrations_rest_url: "https://{{ matrix_server_fqn_integration }}/api/v1/scalar"
+dimension_integrations_widgets_urls: ["https://{{ matrix_server_fqn_integration }}/widgets"]
+dimension_integrations_jitsi_widget_url: "https://{{ matrix_server_fqn_integration }}/widgets/jitsi"
+
+# Default Dimension configuration template which covers the generic use case.
+# You can customize it by controlling the various variables inside it.
+#
+# For a more advanced customization, you can extend the default (see `dimension_configuration_extension_yaml`)
+# or completely replace this variable with your own template.
+dimension_config: |
+  #jinja2: lstrip_blocks: True
+  # The web settings for the service (API and UI).
+  # It is best to have this run on localhost and use a reverse proxy to access Dimension.
+  web:
+    port: 8184
+    address: '0.0.0.0'
+  # Homeserver configuration
+  homeserver:
+    # The domain name of the homeserver. This is used in many places, such as with go-neb
+    # setups, to identify the homeserver.
+    name: "{{ matrix_domain }}"
+    # The URL that Dimension, go-neb, and other services provisioned by Dimension should
+    # use to access the homeserver with.
+    clientServerUrl: "http://localhost:8008"
+    # The URL that Dimension should use when trying to communicate with federated APIs on
+    # the homeserver. If not supplied or left empty Dimension will try to resolve the address
+    # through the normal federation process.
+    federationUrl: "http://localhost:8008"
+    # The URL that Dimension will redirect media requests to for downloading media such as
+    # stickers. If not supplied or left empty Dimension will use the clientServerUrl.
+    mediaUrl: "https://{{ matrix_server_fqn_matrix }}"
+    # The access token Dimension should use for miscellaneous access to the homeserver. This
+    # should be for a user on the configured homeserver: any user will do, however it is
+    # recommended to use a dedicated user (such as @dimension:t2bot.io). For information on
+    # how to acquire an access token, visit https://t2bot.io/docs/access_tokens
+    accessToken: "{{ matrix_dimension_access_token }}"
+  # These users can modify the integrations this Dimension supports.
+  # To access the admin interface, open Dimension in Riot and click the settings icon.
+  admins: {{ matrix_dimension_admins|to_json }}
+  # IPs and CIDR ranges listed here will be blocked from being widgets.
+  # Note: Widgets may still be embedded with restricted content, although not through Dimension directly.
+  widgetBlacklist:
+    - 10.0.0.0/8
+    - 172.16.0.0/12
+    - 192.168.0.0/16
+    - 127.0.0.0/8
+  # Where the database for Dimension is
+  database:
+    file: "dimension.db"
+  # Display settings that apply to self-hosted go-neb instances
+  goneb:
+    # The avatars to set for each bot. Usually these don't need to be changed, however if your homeserver
+    # is not able to reach t2bot.io then you should specify your own here. To not use an avatar for a bot,
+    # make the bot's avatar an empty string.
+    avatars:
+      giphy: "mxc://t2bot.io/c5eaab3ef0133c1a61d3c849026deb27"
+      imgur: "mxc://t2bot.io/6749eaf2b302bb2188ae931b2eeb1513"
+      github: "mxc://t2bot.io/905b64b3cd8e2347f91a60c5eb0832e1"
+      wikipedia: "mxc://t2bot.io/7edfb54e9ad9e13fec0df22636feedf1"
+      travisci: "mxc://t2bot.io/7f4703126906fab8bb27df34a17707a8"
+      rss: "mxc://t2bot.io/aace4fcbd045f30afc1b4e5f0928f2f3"
+      google: "mxc://t2bot.io/636ad10742b66c4729bf89881a505142"
+      guggy: "mxc://t2bot.io/e7ef0ed0ba651aaf907655704f9a7526"
+      echo: "mxc://t2bot.io/3407ff2db96b4e954fcbf2c6c0415a13"
+      circleci: "mxc://t2bot.io/cf7d875845a82a6b21f5f66de78f6bee"
+      jira: "mxc://t2bot.io/f4a38ebcc4280ba5b950163ca3e7c329"
+  # Settings for how Dimension is represented to the public
+  dimension:
+  # This is where Dimension is accessible from clients. Be sure to set this
+  # to your own Dimension instance.
+    publicUrl: "https://{{ matrix_server_fqn_integration }}"
+  # Settings for controlling how logging works
+  logging:
+    file: /var/log/dimension.log
+    console: true
+    consoleLevel: verbose
+    fileLevel: info
+    rotate:
+      size: 52428800 # bytes, default is 50mb
+      count: 5
+dimension_config_ext: |
+  # Your custom YAML configuration for Dimension goes here.
+  # This configuration extends the default starting configuration (`dimension_config`).
+  #
+  # You can override individual variables from the default configuration, or introduce new ones.
+  #
+  # If you need something more special, you can take full control by
+  # completely redefining `dimension_config`.
+  #
+  # Example configuration extension follows:
+  # telegram:
+  #   botToken: "YourTokenHere"
+  #
+dimension_config_ext_dict: "{{ dimension_config_ext|from_yaml if dimension_config_ext|from_yaml is mapping else {} }}"
+
+# Holds the final Dimension configuration (a combination of the default and its extension).
+# You most likely don't need to touch this variable. Instead, see `dimension_config`.
+dimension_configuration: "{{ dimension_config|from_yaml|combine(dimension_config_ext_dict, recursive=True) }}"
 

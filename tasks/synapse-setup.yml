@@ -4,7 +4,7 @@
   lineinfile: dest=/etc/matrix-synapse/conf.d/server_name.yaml
   args:
     regexp: "^(.*)server_name:(.*)"
-    line: "server_name: {{ matrix_server_fqn_matrix }}"
+    line: "server_name: {{ matrix_domain }}"
     create: yes
 
 - name: "Ensure /etc/matrix-synapse/conf.d/report_stats.yaml is configured"
@@ -38,15 +38,18 @@
     - client
     - server
 
-#- name: Ensure matrix-synapse server is restarted and enabled
-#  service: name=matrix-synapse state=restarted enabled=yes
+- name: Ensure matrix-synapse server is restarted and enabled
+  service: name=matrix-synapse state=restarted enabled=yes
 
+- name: Wait a while, so that Matrix Synapse can manage to start
+  pause:
+    seconds: 7
 
-
-#####
-##### new
-#####
-
+- name: Register users
+  shell: "/usr/bin/register_new_matrix_user -u {{ item.user }} -p {{ item.pass }} -c /etc/matrix-synapse/homeserver.yaml {{ '--admin' if item.admin | default('--no-admin') }} 'http://localhost:8008'"
+  with_items: "{{ matrix_users }}"
+  ignore_errors: yes
+  when: matrix_users and matrix_users | length > 0
 
 
 # do defaultu

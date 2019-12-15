@@ -1,0 +1,16 @@
+[Unit]
+Description=Matrix Mautrix Facebook server
+After=systemd-networkd.service network.target
+Requires=matrix-synapse.service
+After=matrix-synapse.service
+
+[Service]
+Type=simple
+ExecStart={{ ext_appservice_mautrix_facebook_base_path }}/bin/python -m mautrix_facebook -c {{ ext_appservice_mautrix_facebook_base_path }}/config.yaml
+WorkingDirectory={{ ext_appservice_mautrix_facebook_base_path }}
+User=matrix-synapse
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

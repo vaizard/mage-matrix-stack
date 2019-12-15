@@ -1,32 +1,25 @@
 ---
 
-
-#add dns selfcheck 
-# - https://github.com/spantaleev/matrix-docker-ansible-deploy/blob/master/roles/matrix-base/tasks/self_check_dns.yml
-# - includes: #https://github.com/spantaleev/matrix-docker-ansible-deploy/blob/master/roles/matrix-base/tasks/self_check_dns_srv.yml
-
-
-
-# add chrony!
-
 - include: sanity-check.yml
-- include: mxisd.yml
-  when: mxisd_enabled == true
-#- include: riot-web.yml
+- include: ma1sd.yml
+  when: ma1sd_enabled == true
+- include: riot-web.yml
 - name: Ensure extension install path exists
   file:
     path: "{{ synapse_ext_path }}"
     state: directory
-- include: synapse-pre.yml
+- include: synapse-install.yml
 - import_tasks: "extensions/password-provider-rest-auth.yml"
 - import_tasks: "extensions/password-provider-shared-secret-auth.yml"
+- import_tasks: "extensions/appservice-mautrix-facebook.yml"
 - import_tasks: "extensions/appservice-mautrix-whatsapp.yml"
-- include: synapse.yml
-- include: synapse-post.yml
+- import_tasks: "bots/bot-maubot.yml"
+- include: synapse-setup.yml
 - include: coturn.yml
 
+# Dimension support likely won't happen before dimension release 1.0
+# npm dependency hell makes this package basically unmanagable.
+#- include: dimension.yml
+#  when: dimension_enabled == true
 
-# add svc https://github.com/spantaleev/matrix-docker-ansible-deploy/blob/master/roles/matrix-synapse/tasks/ext/mautrix-telegram/setup.yml
-# add svc https://github.com/spantaleev/matrix-docker-ansible-deploy/blob/master/roles/matrix-synapse/tasks/ext/mautrix-whatsapp/setup.yml
-# https://github.com/spantaleev/matrix-docker-ansible-deploy/tree/master/roles/matrix-synapse/tasks/ext/shared-secret-auth
-# https://github.com/spantaleev/matrix-docker-ansible-deploy/tree/master/roles/matrix-synapse/tasks/ext/rest-auth
+

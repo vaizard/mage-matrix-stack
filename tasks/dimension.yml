@@ -1,0 +1,27 @@
+---
+
+- name: Get fresh dimension from github
+  git:
+    repo: https://github.com/turt2live/matrix-dimension
+    dest: "{{ dimension_base_path }}"
+
+- name: npm install dimension prereqs (node 12 compat)
+  shell: npm install sharp@0.22.1 sqlite3@latest
+  args:
+    chdir: /opt/dimension
+
+- name: npm install dimension
+  shell: npm install
+  args:
+    chdir: /opt/dimension
+
+- name: npm build dimension
+  shell: npm run build
+  args:
+    chdir: /opt/dimension
+
+- name: "Ensure /etc/dimension directory exists"
+  file:
+    path: /etc/dimension
+    state: directory
+

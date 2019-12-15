@@ -23,10 +23,28 @@
 - name: Fail if matrix_server_fqn_matrix and matrix_server_fqn_riot are the same
   fail:
     msg: "Running Riot and Synapse from the same domain is not recommended due to the risk of XSS vulnerabilities (see https://github.com/vector-im/riot-web/issues/1977)."
-  when: "matrix_server_fqn_matrix ==  matrix_server_fqn_riot"
+  when: "matrix_server_fqn_matrix == matrix_server_fqn_riot"
 
 
+- name: Fail if required Dimension settings not defined
+  fail:
+    msg: >-
+      You need to define a required configuration setting (`{{ item }}`) for using Dimension.
+  with_items:
+    - "dimension_access_token"
+  when: "dimension_enabled and vars[item] == ''"
 
+- name: Fail if Matrix Federation is disabled
+  fail:
+    msg: >-
+      You need to enable Matrix Federation to use Dimension. Set `{{ item }}` to 'true'.
+  with_items:
+    - "disable_federation"
+  when: "dimension_enabled|bool and disable_federation|bool"
+
+- name: Fail if synapse registration requires a msisdn 3PID, when msisdn is disabled at the same time
+  fail: msg="Resolve conflict between synapse_registrations_require_3pid and synapse_disable_msisdn_registration"
+  when: synapse_disable_msisdn_registration and 'msisdn' in synapse_registrations_require_3pid
 
 # add chrony!
 

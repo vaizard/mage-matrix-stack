@@ -1,0 +1,67 @@
+---
+
+#- set_fact:
+#    matrix_systemd_services_list: "{{ matrix_systemd_services_list + ['matrix-mautrix-facebook'] }}"
+#  when: bot_mautrix_facebook_enabled
+
+- name: Ensure virtualenv is installed
+  apt:
+    name: "{{ packages }}"
+    state: latest
+  vars:
+    packages:
+      - virtualenv
+      - python-pip
+      - python3-pip
+      - libpq-dev
+
+- name: Ensuring target dir existence and correct ownership
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: matrix-synapse
+  with_items:
+    - "{{ bot_maubot_base_path }}/plugins"
+    - "{{ bot_maubot_base_path }}/trash"
+    - "{{ bot_maubot_base_path }}/logs"
+  when: bot_maubot_enabled
+
+- name: Install maubot
+  pip:
+    name:
+      - psycopg2
+      - maubot
+      - pytz
+      - dateparser>=0.7.1,<0.8
+    virtualenv: "{{ bot_maubot_base_path }}"
+    virtualenv_command: virtualenv -p /usr/bin/python3
+    state: latest
+  when: bot_maubot_enabled
+
+- name: Ensure maubot config installed
+  template:
+    src: "bot-maubot.config.yaml.j2"
+    dest: "{{ bot_maubot_base_path }}/config.yaml"
+    mode: 0644
+    owner: matrix-synapse
+  when: bot_maubot_enabled
+
+- name: Ensure maubot.service installed
+  template:
+    src: "bot-maubot.service.j2"
+    dest: "/etc/systemd/system/maubot.service"
+    mode: 0644
+  when: "bot_maubot_enabled"
+  notify:
+    - restart maubot
+
+
+#
+# Tasks related to getting rid of bot-maubot (if it was previously enabled)
+#
+
+- name: "Ensure matrix-maubot.service doesn't exist"
+  file:
+    path: "/etc/systemd/system/matrix-maubot.service"
+    state: absent
+  when: "not bot_maubot_enabled"

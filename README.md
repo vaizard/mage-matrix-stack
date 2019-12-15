@@ -2,17 +2,24 @@
 
 Mage-matrix-stack is an Ansible role providing:
 
-- matrix-synapse (matrix server listening on ports 8448 and 8008)
-- riot-web (glossy web client / frontend to the matrix-synapse server - static webapp written in js)
 - coturn (turn server listening on ports 3478, 3479)
-- postgres (storage for matrix-synapse)
+- matrix-synapse (matrix server listening on ports 8448 and 8008)
+- mautrix-whatsapp bridge
+- mautrix-facebook bridge
+- maubot (https://matrix.example.com:29316/_matrix/maubot)
 - nginx (serving riot-web, listening on port 80)
+- riot-web (glossy web client / frontend to the matrix-synapse server - static webapp written in js)
+
+This role relies on other roles:
+
+- mage-postgres (provides storage for matrix-synapse)
+- mage-haproxy (tls terminating reverse proxy)
 
 Mage-matrix-stack expects a proxy/loadbalancer sitting infront and terminating ssl connections.
 Mage-matrix-stack requires at least 2 GB RAM on install time, due to crazy RAM usage of npm.
 
-NOTE: To run matrix-stack in production, you should use two containers (matrix, proxy). Forcing the matrix-stack
-onto a single machine / into a single container is possible but not recommended.
+NOTE: To run matrix-stack in production, you should use two containers (matrix, proxy). Forcing the
+matrix-stack onto a single machine / into a single container is possible but not recommended.
 
 ## Matrix container
 

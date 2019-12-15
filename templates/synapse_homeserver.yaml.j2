@@ -495,7 +495,7 @@ database:
   args:
     user: "{{ db_user }}"
     password: "{{ db_pass }}"
-    database: "{{ db_name }}"
+    database: "{{ db_pref }}_synapse"
     host: "{{ db_host }}"
     cp_min: {{ db_cp_min }}
     cp_max: {{ db_cp_max }}
@@ -866,11 +866,15 @@ enable_registration: {{ synapse_enable_registration | to_json }}
 #registrations_require_3pid:
 #  - email
 #  - msisdn
+{% if synapse_registrations_require_3pid | length > 0 %}
+registrations_require_3pid:
+  {{ synapse_registrations_require_3pid | to_nice_yaml }}
+{% endif %}
 
 # Explicitly disable asking for MSISDNs from the registration
 # flow (overrides registrations_require_3pid if MSISDNs are set as required)
 #
-#disable_msisdn_registration: true
+disable_msisdn_registration: {{ synapse_disable_msisdn_registration }}
 
 # Mandate that users are only allowed to associate certain formats of
 # 3PIDs with accounts on this server.
@@ -922,7 +926,7 @@ allow_guest_access: {{ synapse_allow_guest_access | to_json }}
 #
 {% if matrix_identity_servers | length > 0 %}
 trusted_third_party_id_servers:
-{{ matrix_identity_servers | to_nice_yaml }}
+  {{ matrix_identity_servers | to_nice_yaml }}
 {% endif %}
 
 # Users who register on this homeserver will automatically be joined
@@ -932,7 +936,7 @@ trusted_third_party_id_servers:
 #  - "#example:example.com"
 {% if synapse_auto_join_rooms|length > 0 %}
 auto_join_rooms:
-{{ synapse_auto_join_rooms|to_nice_yaml }}
+  {{ synapse_auto_join_rooms|to_nice_yaml }}
 {% endif %}
 
 # Where auto_join_rooms are specified, setting this flag ensures that the

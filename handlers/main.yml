@@ -1,17 +1,22 @@
-#- name: start synapse
-#  service: name=synapse state=started
+---
 
-- name: restart matrix-synapse
-  service: name=matrix-synapse state=restarted
+- name: "restart matrix-synapse"
+  service: name=matrix-synapse state=restarted enabled=yes
 
-- name: restart mautrix-whatsapp
-  service: name=mautrix-whatsapp state=restarted
+- name: "restart mautrix-whatsapp"
+  service: name=mautrix-whatsapp state=restarted enabled=yes
 
-- name: start coturn
-  service: name=coturn state=started
+- name: "restart mautrix-facebook"
+  service: name=mautrix-facebook state=restarted enabled=yes
 
-- name: restart coturn
-  service: name=coturn state=restarted
+- name: "start coturn"
+  service: name=coturn state=started enabled=yes
 
-- name: restart nginx
-  service: name=nginx state=restarted
+- name: "restart maubot"
+  service: name=maubot state=restarted enabled=yes
+
+- name: "restart coturn"
+  service: name=coturn state=restarted enabled=yes
+
+- name: "restart nginx"
+  service: name=nginx state=restarted enabled=yes

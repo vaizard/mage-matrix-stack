@@ -1,0 +1,17 @@
+[Unit]
+Description=Matrix Maubot server
+After=systemd-networkd.service network.target
+Requires=matrix-synapse.service
+After=matrix-synapse.service
+
+[Service]
+Type=simple
+ExecStart={{ bot_maubot_base_path }}/bin/python -m maubot -c {{ bot_maubot_base_path }}/config.yaml
+WorkingDirectory={{ bot_maubot_base_path }}
+User=matrix-synapse
+Restart=always
+RestartSec=30
+RuntimeMaxSec=86400
+
+[Install]
+WantedBy=multi-user.target

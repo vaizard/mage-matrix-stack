@@ -1,3 +1,4 @@
+#jinja2: lstrip_blocks: "True"
 # Homeserver details.
 homeserver:
   # The address that this appservice can use to connect to the homeserver.
@@ -17,10 +18,20 @@ appservice:
 
   # Database config.
   database:
-    # The database type. Only "sqlite3" is supported.
-    type: sqlite3
-    # The database URI. Usually file name. https://github.com/mattn/go-sqlite3#connection-string
+    # The database type. "sqlite3" and "postgres" are supported.
+    type: {{ 'postgres' if ext_appservice_mautrix_whatsapp_db == 'postgres' else 'sqlite3' }}
+    # The database URI.
+    #   SQLite: File name is enough. https://github.com/mattn/go-sqlite3#connection-string
+    #   Postgres: Connection string. For example, postgres://user:password@host/database
+    {% if ext_appservice_mautrix_whatsapp_db == 'postgres' %}
+    uri: postgres://{{ db_user }}:{{ db_pass }}@{{ db_host }}/{{ db_pref }}_mautrix_whatsapp?sslmode=disable
+    {% else %}
     uri: mautrix-whatsapp.db
+    {% endif %}
+    # Maximum number of connections. Mostly relevant for Postgres.
+    max_open_conns: 20
+    max_idle_conns: 2
+
   # Path to the Matrix room state store.
   state_store_path: /run/matrix-synapse/mx-state.json
 
@@ -129,12 +140,12 @@ bridge:
   #   domain - All users on that homeserver
   #     mxid - Specific user
   permissions:
-    '{{ matrix_domain }}': user
-{% for u in matrix_users %}
-{% if u.admin %}
-'@{{ u.user }}:{{ matrix_domain }}': admin
-{% endif %}
-{% endfor %}
+    "{{ matrix_domain }}": "user"
+    {% for u in matrix_users %}
+    {% if u.admin %}
+    "@{{ u.user }}:{{ matrix_domain }}": "admin"
+    {% endif %}
+    {% endfor %}
 
 # Logging config.
 logging:

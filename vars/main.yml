@@ -1,19 +1,19 @@
 ---
 
 ###
-### Convert mxisd_config_ext to dict and combine it with mxisd_conig
+### Convert ma1sd_config_ext to dict and combine it with ma1sd_conig
 ###
 
 # Doing `|from_yaml` when the extension contains nothing yields an empty string ("").
-# We need to ensure it's a dictionary or `|combine` (when building `matrix_mxisd_configuration`) will fail later.
-mxisd_config_ext_dict: "{{ mxisd_config_ext|from_yaml if mxisd_config_ext|from_yaml else {} }}"
+# We need to ensure it's a dictionary or `|combine` (when building `matrix_ma1sd_configuration`) will fail later.
+ma1sd_config_ext_dict: "{{ ma1sd_config_ext|from_yaml if ma1sd_config_ext|from_yaml else {} }}"
 
-# Holds the final mxisd configuration (a combination of the default and its extension).
-# You most likely don't need to touch this variable. Instead, see `matrix_mxisd_configuration_yaml`.
-mxisd_configuration: "{{ mxisd_config|from_yaml|combine(mxisd_config_ext_dict, recursive=True) }}"
+# Holds the final ma1sd configuration (a combination of the default and its extension).
+# You most likely don't need to touch this variable. Instead, see `matrix_ma1sd_configuration_yaml`.
+ma1sd_configuration: "{{ ma1sd_config|from_yaml|combine(ma1sd_config_ext_dict, recursive=True) }}"
 
-mxisd_config_path: "/etc/mxisd"
-mxisd_data_path: "/var/mxisd"
+ma1sd_config_path: "/etc/ma1sd"
+ma1sd_data_path: "/var/ma1sd"
 
 ###
 ### Synapse stuff

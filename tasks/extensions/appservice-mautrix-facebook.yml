@@ -1,0 +1,105 @@
+---
+
+#- set_fact:
+#    matrix_systemd_services_list: "{{ matrix_systemd_services_list + ['matrix-mautrix-facebook'] }}"
+#  when: ext_appservice_mautrix_facebook_enabled
+
+- name: Ensure virtualenv is installed
+  apt:
+    name: "{{ packages }}"
+    state: latest
+  vars:
+    packages:
+      - virtualenv
+      - python-pip
+      - python3-pip
+      - libpq-dev
+
+- name: Ensuring target dir existence and correct ownership
+  file:
+    path:  "{{ ext_appservice_mautrix_facebook_base_path }}"
+    state: directory
+    owner: matrix-synapse
+  when: ext_appservice_mautrix_facebook_enabled
+
+- name: Install mautrix-facebook
+  pip:
+    name: 
+      - mautrix-facebook
+      - psycopg2
+    virtualenv: "{{ ext_appservice_mautrix_facebook_base_path }}"
+    virtualenv_command: virtualenv -p /usr/bin/python3
+    state: latest
+  when: ext_appservice_mautrix_facebook_enabled
+
+#- name: Install mautrix-facebook2
+#  pip:
+#    name: psycopg2
+#    virtualenv: "{{ ext_appservice_mautrix_facebook_base_path }}"
+#    virtualenv_command: virtualenv -p /usr/bin/python3
+#    state: latest
+ # when: ext_appservice_mautrix_facebook_enabled
+
+
+- name: Ensure mautrix-facebook config installed
+  template:
+    src: "appservice-mautrix-facebook.config.yaml.j2"
+    dest: "{{ ext_appservice_mautrix_facebook_base_path }}/config.yaml"
+    mode: 0644
+  when: ext_appservice_mautrix_facebook_enabled
+  notify:
+    - "restart matrix-synapse"
+    - "restart mautrix-facebook"
+
+- name: Ensure mautrix-facebook.service installed
+  template:
+    src: "appservice-mautrix-facebook.service.j2"
+    dest: "/etc/systemd/system/mautrix-facebook.service"
+    mode: 0644
+  when: "ext_appservice_mautrix_facebook_enabled"
+
+- name: Check if a mautrix-facebook registration file exists
+  stat:
+    path: "{{ ext_appservice_mautrix_facebook_base_path }}/registration.yaml"
+  register: mautrix_facebook_registration_file_stat
+  when: "ext_appservice_mautrix_facebook_enabled"
+
+- name: "Generate mautrix-facebook registration.yaml if it doesn't exist"
+  shell: |
+    {{ ext_appservice_mautrix_facebook_base_path }}/bin/python -m mautrix_facebook -g -c {{ ext_appservice_mautrix_facebook_base_path }}/config.yaml -r {{ ext_appservice_mautrix_facebook_base_path }}/registration.yaml
+    {{ ext_appservice_mautrix_facebook_base_path }}/bin/alembic upgrade head
+  args:
+    chdir:  "{{ ext_appservice_mautrix_facebook_base_path }}"
+  when: "ext_appservice_mautrix_facebook_enabled"
+
+- name: "Ensure that registration.yml belongs to {{ matrix_user }}"
+  file: 
+    path: "{{ ext_appservice_mautrix_facebook_base_path }}/registration.yaml"
+    owner: "{{ matrix_user }}"
+
+- name: "Ensure /run/matrix-synapse directory exists and is owned by {{ matrix-user }}"
+  file: 
+    path: "/run/matrix-synapse"
+    owner: "{{ matrix_user }}"
+    state: directory
+
+- set_fact:
+    synapse_app_service_config_file_mautrix_facebook: '{{ ext_appservice_mautrix_facebook_base_path }}/registration.yaml'
+  when: "ext_appservice_mautrix_facebook_enabled"
+
+- set_fact:
+    synapse_app_service_config_files: >
+      {{ synapse_app_service_config_files }}
+      +
+      {{ ["{{ synapse_app_service_config_file_mautrix_facebook }}"] | to_nice_json  }}
+  when: "ext_appservice_mautrix_facebook_enabled"
+
+#
+# Tasks related to getting rid of matrix-mautrix-facebook (if it was previously enabled)
+#
+
+- name: "Ensure matrix-mautrix-facebook.service doesn't exist"
+  file:
+    path: "/etc/systemd/system/matrix-mautrix-facebook.service"
+    state: absent
+  when: "not ext_appservice_mautrix_facebook_enabled"

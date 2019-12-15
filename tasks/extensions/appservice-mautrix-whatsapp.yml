@@ -16,14 +16,20 @@
 - name: Get fresh mautrix-whatsapp from github
   git:
     repo: https://github.com/tulir/mautrix-whatsapp
-    dest: /opt/mautrix-whatsapp
+    dest: "{{ ext_appservice_mautrix_whatsapp_base_path }}"
   when: ext_appservice_mautrix_whatsapp_enabled
 
 - name: (Re)build mautrix-whatsapp
   command: go build
   args:
-    chdir: /opt/mautrix-whatsapp
+    chdir: "{{ ext_appservice_mautrix_whatsapp_base_path }}"
   when: ext_appservice_mautrix_whatsapp_enabled
+
+- name: Ensuring correct dir ownership
+  file:
+    path: "{{ ext_appservice_mautrix_whatsapp_base_path }}"
+    state: directory
+    owner: matrix-synapse
 
 - name: Ensure mautrix-whatsapp config installed
   template:
@@ -31,6 +37,10 @@
     dest: "{{ ext_appservice_mautrix_whatsapp_base_path }}/config.yaml"
     mode: 0644
   when: ext_appservice_mautrix_whatsapp_enabled
+  notify:
+    - "restart matrix-synapse"
+    - "restart mautrix-whatsapp"
+
 
 - name: Ensure mautrix-whatsapp.service installed
   template:
@@ -61,18 +71,6 @@
     owner: "{{ matrix_user }}"
     state: directory
 
-# need to start this stuff after synapse starts
-#- name: Ensure systemd reloaded and mautrix-whatsapp.service enabled and restarted
-#  systemd:
-#    name: mautrix-whatsapp
-#    daemon_reload: yes
-#    enabled: yes
-#    state: restarted
-#  when: ext_appservice_mautrix_whatsapp_enabled
-#  notify:
-#    - restart matrix-synapse
-#    - restart mautrix-whatsapp
-
 - set_fact:
     synapse_app_service_config_file_mautrix_whatsapp: '{{ ext_appservice_mautrix_whatsapp_base_path }}/registration.yaml'
   when: "ext_appservice_mautrix_whatsapp_enabled"
@@ -81,12 +79,8 @@
     synapse_app_service_config_files: >
       {{ synapse_app_service_config_files }}
       +
-      {{ ["{{ synapse_app_service_config_file_mautrix_whatsapp }}"] | to_nice_json  }}
+      {{ ["{{ synapse_app_service_config_file_mautrix_whatsapp }}"] | to_nice_json }}
   when: "ext_appservice_mautrix_whatsapp_enabled"
-  notify:
-    - restart matrix-synapse
-    - restart mautrix-whatsapp
-
 
 #
 # Tasks related to getting rid of matrix-mautrix-whatsapp (if it was previously enabled)
